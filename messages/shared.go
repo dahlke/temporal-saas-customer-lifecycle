@@ -1,6 +1,4 @@
-package app
-
-const OnboardingTaskQueue = "ONBOARDING_TASK_QUEUE"
+package messages
 
 type AcceptClaimCodeInput struct {
 	ClaimCode string `json:"claim_code"`

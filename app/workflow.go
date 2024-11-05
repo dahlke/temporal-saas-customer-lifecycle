@@ -1,9 +1,15 @@
 package app
 
 import (
+	"fmt"
+	"temporal-saas-customer-onboarding/messages"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+)
+
+const (
+	ACCEPTANCE_TIME = 120
 )
 
 func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
@@ -13,8 +19,12 @@ func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
 
 	ctx = workflow.WithActivityOptions(ctx, options)
 
-	// TODO: compensations
+	// TODO: codec server
+	// TODO: create a compensation class, do compensations
 	// TODO: custom search attributes
+	// TODO: throw and catch errors
+	// TODO: re-send claim codes signal
+	// TODO: add logging
 
 	var chargeResult string
 	err := workflow.ExecuteActivity(ctx, ChargeCustomer, name).Get(ctx, &chargeResult)
@@ -31,7 +41,8 @@ func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
 	}
 
 	var createAdminUsersResult string
-	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, name).Get(ctx, &createAdminUsersResult)
+	var emails []string = []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
+	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, emails).Get(ctx, &createAdminUsersResult)
 
 	if err != nil {
 		return "", err
@@ -44,10 +55,41 @@ func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
 		return "", err
 	}
 
-	// TODO: re-send claim codes signal
-	// TODO: Signal claim code accepter
 	var sendClaimCodesResult string
-	err = workflow.ExecuteActivity(ctx, SendClaimCodes, name).Get(ctx, &sendClaimCodesResult)
+	var claimCodes []string = []string{"XXX", "YYY"}
+	err = workflow.ExecuteActivity(ctx, SendClaimCodes, name, claimCodes).Get(ctx, &sendClaimCodesResult)
+
+	if err != nil {
+		return "", err
+	}
+
+	/*
+		// Signal to receive the claim code
+		c := messages.GetSignalChannelForAcceptClaimCode(ctx)
+		claimCodeStatus, _ := c.ReceiveWithTimeout(ctx, time.Second*ACCEPTANCE_TIME, nil)
+
+		// If the signal was not received within the timeout, fail the workflow
+		if !claimCodeStatus {
+			return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
+		}
+	*/
+
+	// Update to receive the claim code
+	var claimCodeStatus bool
+	claimCodeStatus, err = messages.SetUpdateHandlerForAcceptClaimCode(ctx)
+
+	if err != nil {
+		return "", err
+	}
+
+	workflow.AwaitWithTimeout(ctx, time.Minute, func() bool {
+		return claimCodeStatus
+	})
+
+	// If the update or signal was not received within the timeout, fail the workflow
+	if !claimCodeStatus {
+		return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
+	}
 
 	if err != nil {
 		return "", err
@@ -56,15 +98,14 @@ func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
 	// TODO: re-send welcome codes signal
 	// TODO: query out welcome email sent
 	var sendWelcomeEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, name).Get(ctx, &sendWelcomeEmailResult)
+	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, emails).Get(ctx, &sendWelcomeEmailResult)
 
 	if err != nil {
 		return "", err
 	}
 
-	// TODO: query out feedback email
 	var sendFeedbackEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, name).Get(ctx, &sendFeedbackEmailResult)
+	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, emails).Get(ctx, &sendFeedbackEmailResult)
 
 	if err != nil {
 		return "", err
