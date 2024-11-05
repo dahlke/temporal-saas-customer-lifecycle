@@ -35,18 +35,8 @@ func UndoCreateAdminUsers(ctx context.Context, emails []string) (string, error) 
 	return result, nil
 }
 
-func CreateSupportChannel(ctx context.Context, name string) (string, error) {
-	result := fmt.Sprintf("Created support channel for %s", name)
-	return result, nil
-}
-
-func UndoCreateSupportChannel(ctx context.Context, name string) (string, error) {
-	result := fmt.Sprintf("Support channel for %s was deleted", name)
-	return result, nil
-}
-
-func SendClaimCodes(ctx context.Context, userID string, codes []string) (string, error) {
-	result := fmt.Sprintf("Sent claim codes to user %s: %v", userID, codes)
+func SendClaimCodes(ctx context.Context, email string, code string) (string, error) {
+	result := fmt.Sprintf("Sent claim code to user %s: %v", email, code)
 	return result, nil
 }
 

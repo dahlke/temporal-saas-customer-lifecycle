@@ -13,6 +13,7 @@ import (
 func main() {
 
 	// Create the client object just once per process
+	// TODO: codec server
 	c, err := client.Dial(client.Options{})
 	if err != nil {
 		log.Fatalln("unable to create Temporal client", err)
@@ -25,20 +26,28 @@ func main() {
 	}
 
 	// Start the Workflow
-	name := "World"
-	we, err := c.ExecuteWorkflow(context.Background(), options, app.OnboardingWorkflow, name)
+	accountName := "Temporal"
+	emails := []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
+	input := app.OnboardingWorkflowInput{AccountName: accountName, Emails: emails}
+
+	wf, err := c.ExecuteWorkflow(
+		context.Background(),
+		options,
+		app.OnboardingWorkflow,
+		input,
+	)
 	if err != nil {
 		log.Fatalln("unable to complete Workflow", err)
 	}
 
 	// Get the results
 	var result string
-	err = we.Get(context.Background(), &result)
+	err = wf.Get(context.Background(), &result)
 	if err != nil {
 		log.Fatalln("unable to get Workflow result", err)
 	}
 
-	printResults(result, we.GetID(), we.GetRunID())
+	printResults(result, wf.GetID(), wf.GetRunID())
 }
 
 func printResults(result string, workflowID, runID string) {

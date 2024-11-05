@@ -31,7 +31,7 @@ func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool) (bo
 
 func validateClaimCode(ctx workflow.Context, update AcceptClaimCodeInput) error {
 	logger := workflow.GetLogger(ctx)
-
+	// Check that the claim code is a 3 letter uppercase string
 	re := regexp.MustCompile(`^[A-Z]{3}$`)
 
 	if !re.MatchString(update.ClaimCode) {

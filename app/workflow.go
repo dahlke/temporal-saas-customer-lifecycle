@@ -12,53 +12,68 @@ const (
 	ACCEPTANCE_TIME = 120
 )
 
-// TODO: take in an input struct
-func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
+func OnboardingWorkflow(ctx workflow.Context, input OnboardingWorkflowInput) (string, error) {
 	options := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Second * 5,
 	}
 
 	ctx = workflow.WithActivityOptions(ctx, options)
 
-	// TODO: codec server
+	state := OnboardingWorkflowState{
+		AccountName: input.AccountName,
+		Emails:      input.Emails,
+		ClaimCodes:  make([]ClaimCodeStatus, len(input.Emails)),
+	}
+
+	// Initialize claim codes for each email
+	claimCodes := []string{"XXX", "YYY"}
+	for i, email := range input.Emails {
+		state.ClaimCodes[i] = ClaimCodeStatus{
+			Email:     email,
+			Code:      claimCodes[i],
+			IsClaimed: false,
+		}
+	}
+
 	// TODO: create a compensation class, do compensations
 	// TODO: custom search attributes
 	// TODO: throw and catch errors
 	// TODO: re-send claim codes signal
-	// TODO: add logging
+	// TODO: add logging of the results
+	// TODO: resend welcome email signal
+	// TODO: resend claim codes signal
+	// TODO: query out workflow state
+	// TODO: comments
 
 	var chargeResult string
-	err := workflow.ExecuteActivity(ctx, ChargeCustomer, name).Get(ctx, &chargeResult)
+	err := workflow.ExecuteActivity(ctx, ChargeCustomer, input.AccountName).Get(ctx, &chargeResult)
 
 	if err != nil {
 		return "", err
 	}
 
 	var createAccountResult string
-	err = workflow.ExecuteActivity(ctx, CreateAccount, name).Get(ctx, &createAccountResult)
+	err = workflow.ExecuteActivity(ctx, CreateAccount, input.AccountName).Get(ctx, &createAccountResult)
 
 	if err != nil {
 		return "", err
 	}
 
 	var createAdminUsersResult string
-	var emails []string = []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
-	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, emails).Get(ctx, &createAdminUsersResult)
+	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, input.Emails).Get(ctx, &createAdminUsersResult)
 
 	if err != nil {
 		return "", err
 	}
 
-	var createSupportChannelResult string
-	err = workflow.ExecuteActivity(ctx, CreateSupportChannel, name).Get(ctx, &createSupportChannelResult)
-
-	if err != nil {
-		return "", err
+	// Make the claim code a hash of the emails?
+	for _, claimCode := range state.ClaimCodes {
+		var sendClaimCodeResult string
+		err = workflow.ExecuteActivity(ctx, SendClaimCodes, input.AccountName, claimCode.Code).Get(ctx, &sendClaimCodeResult)
+		if err != nil {
+			return "", err
+		}
 	}
-
-	var sendClaimCodesResult string
-	var claimCodes []string = []string{"XXX", "YYY"}
-	err = workflow.ExecuteActivity(ctx, SendClaimCodes, name, claimCodes).Get(ctx, &sendClaimCodesResult)
 
 	if err != nil {
 		return "", err
@@ -81,17 +96,15 @@ func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
 		return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
 	}
 
-	// TODO: re-send welcome codes signal
-	// TODO: query out welcome email sent
 	var sendWelcomeEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, emails).Get(ctx, &sendWelcomeEmailResult)
+	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input.Emails).Get(ctx, &sendWelcomeEmailResult)
 
 	if err != nil {
 		return "", err
 	}
 
 	var sendFeedbackEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, emails).Get(ctx, &sendFeedbackEmailResult)
+	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input.Emails).Get(ctx, &sendFeedbackEmailResult)
 
 	if err != nil {
 		return "", err

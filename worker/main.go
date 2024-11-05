@@ -22,7 +22,6 @@ func main() {
 	w.RegisterActivity(app.ChargeCustomer)
 	w.RegisterActivity(app.CreateAccount)
 	w.RegisterActivity(app.CreateAdminUsers)
-	w.RegisterActivity(app.CreateSupportChannel)
 	w.RegisterActivity(app.SendClaimCodes)
 	w.RegisterActivity(app.SendWelcomeEmail)
 	w.RegisterActivity(app.SendFeedbackEmail)
