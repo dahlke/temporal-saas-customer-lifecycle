@@ -8,17 +8,15 @@ import (
 )
 
 // "UpdateClaimCode" update handler
-func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context) (bool, error) {
+func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool) (bool, error) {
 	logger := workflow.GetLogger(ctx)
-
-	var codeAcceptedStatus bool
 
 	err := workflow.SetUpdateHandlerWithOptions(
 		ctx,
 		"AcceptClaimCode",
-		func(ctx workflow.Context, updateInput AcceptClaimCodeInput) (bool, error) {
-			codeAcceptedStatus = true
-			return codeAcceptedStatus, nil
+		func(ctx workflow.Context, updateInput AcceptClaimCodeInput) error {
+			*claimed = true
+			return nil
 		},
 		workflow.UpdateHandlerOptions{Validator: validateClaimCode},
 	)
@@ -28,7 +26,7 @@ func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
-	return codeAcceptedStatus, nil
+	return *claimed, nil
 }
 
 func validateClaimCode(ctx workflow.Context, update AcceptClaimCodeInput) error {

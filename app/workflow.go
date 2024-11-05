@@ -12,6 +12,7 @@ const (
 	ACCEPTANCE_TIME = 120
 )
 
+// TODO: take in an input struct
 func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
 	options := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Second * 5,
@@ -63,36 +64,21 @@ func OnboardingWorkflow(ctx workflow.Context, name string) (string, error) {
 		return "", err
 	}
 
-	/*
-		// Signal to receive the claim code
-		c := messages.GetSignalChannelForAcceptClaimCode(ctx)
-		claimCodeStatus, _ := c.ReceiveWithTimeout(ctx, time.Second*ACCEPTANCE_TIME, nil)
-
-		// If the signal was not received within the timeout, fail the workflow
-		if !claimCodeStatus {
-			return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
-		}
-	*/
-
-	// Update to receive the claim code
-	var claimCodeStatus bool
-	claimCodeStatus, err = messages.SetUpdateHandlerForAcceptClaimCode(ctx)
-
+	// Create a pointer to track the claimed status
+	var claimed bool
+	claimed, err = messages.SetUpdateHandlerForAcceptClaimCode(ctx, &claimed)
 	if err != nil {
 		return "", err
 	}
 
-	workflow.AwaitWithTimeout(ctx, time.Minute, func() bool {
-		return claimCodeStatus
+	// Wait for up to ACCEPTANCE_TIME seconds for the update
+	ok, _ := workflow.AwaitWithTimeout(ctx, time.Second*ACCEPTANCE_TIME, func() bool {
+		return claimed
 	})
 
-	// If the update or signal was not received within the timeout, fail the workflow
-	if !claimCodeStatus {
+	// If the update wasn't received or was false, fail the workflow
+	if !ok {
 		return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
-	}
-
-	if err != nil {
-		return "", err
 	}
 
 	// TODO: re-send welcome codes signal
