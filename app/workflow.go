@@ -6,6 +6,7 @@ import (
 	"temporal-saas-customer-onboarding/types"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -13,17 +14,35 @@ const (
 	ACCEPTANCE_TIME = 120
 )
 
-// Add this type at the top of the file
-type compensation func(workflow.Context) error
+// TODO: comments
+// TODO: custom search attributes
+// TODO: set IsClaimed based on which claim code is accepted
+// TODO: wait for signal and update
 
 func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
 
+	retrypolicy := &temporal.RetryPolicy{
+		InitialInterval:    time.Second,
+		BackoffCoefficient: 2.0,
+		MaximumInterval:    time.Second * 10,
+		MaximumAttempts:    10,
+	}
+
 	options := workflow.ActivityOptions{
-		StartToCloseTimeout: time.Second * 5,
+		StartToCloseTimeout: time.Second * 60,
+		RetryPolicy:         retrypolicy,
 	}
 
 	ctx = workflow.WithActivityOptions(ctx, options)
+	var err error
+	var saga Saga
+	defer func() {
+		if err != nil {
+			disconnectedCtx, _ := workflow.NewDisconnectedContext(ctx)
+			saga.Compensate(disconnectedCtx)
+		}
+	}()
 
 	state := types.OnboardingWorkflowState{
 		AccountName: input.AccountName,
@@ -41,70 +60,51 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		}
 	}
 
-	err := messages.SetQueryHandlerForState(ctx, &state)
+	err = messages.SetQueryHandlerForState(ctx, &state)
 	if err != nil {
 		return "", err
 	}
-
-	// TODO: throw and catch errors
-	// TODO: custom search attributes
-	// TODO: re-send claim codes signal
-	// TODO: re-send welcome email signal
-	// TODO: comments
-	// TODO: set IsClaimed based on which claim code is accepted
-
-	// Create compensation stack
-	var compensations []compensation
 
 	// Charge customer
 	var chargeResult string
-	err = workflow.ExecuteActivity(ctx, ChargeCustomer, input.AccountName).Get(ctx, &chargeResult)
+	err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
 	if err != nil {
 		return "", err
 	}
+	saga.AddCompensation(RefundCustomer, input)
 	logger.Info("Successfully charged customer", "result", chargeResult)
-	// Add compensation
-	compensations = append(compensations, func(ctx workflow.Context) error {
-		var refundResult string
-		return workflow.ExecuteActivity(ctx, RefundCustomer, input.AccountName).Get(ctx, &refundResult)
-	})
 
 	// Create account
 	var createAccountResult string
-	err = workflow.ExecuteActivity(ctx, CreateAccount, input.AccountName).Get(ctx, &createAccountResult)
+	err = workflow.ExecuteActivity(ctx, CreateAccount, input).Get(ctx, &createAccountResult)
 	if err != nil {
-		executeCompensations(ctx, compensations)
 		return "", err
 	}
+	saga.AddCompensation(DeleteAccount, input)
 	logger.Info("Successfully created account", "result", createAccountResult)
-	compensations = append(compensations, func(ctx workflow.Context) error {
-		var deleteResult string
-		return workflow.ExecuteActivity(ctx, DeleteAccount, input.AccountName).Get(ctx, &deleteResult)
-	})
 
 	// Create admin users
 	var createAdminUsersResult string
-	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, input.Emails).Get(ctx, &createAdminUsersResult)
+	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, input).Get(ctx, &createAdminUsersResult)
 	if err != nil {
-		executeCompensations(ctx, compensations)
 		return "", err
 	}
+	saga.AddCompensation(DeleteAdminUsers, input)
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
-	compensations = append(compensations, func(ctx workflow.Context) error {
-		var deleteUsersResult string
-		return workflow.ExecuteActivity(ctx, DeleteAdminUsers, input.Emails).Get(ctx, &deleteUsersResult)
-	})
 
-	// Make the claim code a hash of the emails?
+	// Send claim codes
 	for _, claimCode := range state.ClaimCodes {
 		var sendClaimCodeResult string
-		err = workflow.ExecuteActivity(ctx, SendClaimCodes, input.AccountName, claimCode.Code).Get(ctx, &sendClaimCodeResult)
+		err = workflow.ExecuteActivity(ctx, SendClaimCodes, input, claimCode.Code).Get(ctx, &sendClaimCodeResult)
 		if err != nil {
 			logger.Error("Failed to send claim code", "error", err, "email", claimCode.Email)
 			return "", err
 		}
 		logger.Info("Successfully sent claim code", "result", sendClaimCodeResult, "email", claimCode.Email)
 	}
+
+	//	Simulate bug
+	//	panic("Simulated bug - fix me!")
 
 	if err != nil {
 		return "", err
@@ -128,15 +128,18 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 
 	var sendWelcomeEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input.Emails).Get(ctx, &sendWelcomeEmailResult)
+	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input).Get(ctx, &sendWelcomeEmailResult)
 	if err != nil {
 		logger.Error("Failed to send welcome email", "error", err)
 		return "", err
 	}
 	logger.Info("Successfully sent welcome email", "result", sendWelcomeEmailResult)
 
+	logger.Info("Waiting 10 seconds before sending feedback email")
+	time.Sleep(time.Second * 10)
+
 	var sendFeedbackEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input.Emails).Get(ctx, &sendFeedbackEmailResult)
+	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input).Get(ctx, &sendFeedbackEmailResult)
 	if err != nil {
 		logger.Error("Failed to send feedback email", "error", err)
 		return "", err
@@ -144,16 +147,4 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
 	return sendFeedbackEmailResult, nil
-}
-
-func executeCompensations(ctx workflow.Context, compensations []compensation) {
-	// TODO: review the failure modes and retry logic
-	logger := workflow.GetLogger(ctx)
-	// Execute compensations in reverse order
-	for i := len(compensations) - 1; i >= 0; i-- {
-		if err := compensations[i](ctx); err != nil {
-			logger.Error("Compensation failed", "error", err)
-			// Continue with other compensations even if one fails
-		}
-	}
 }

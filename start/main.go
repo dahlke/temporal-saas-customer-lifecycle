@@ -29,7 +29,8 @@ func main() {
 	// Start the Workflow
 	accountName := "Temporal"
 	emails := []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
-	input := types.OnboardingWorkflowInput{AccountName: accountName, Emails: emails}
+	price := 10.0
+	input := types.OnboardingWorkflowInput{AccountName: accountName, Emails: emails, Price: price}
 
 	wf, err := c.ExecuteWorkflow(
 		context.Background(),

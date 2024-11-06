@@ -7,7 +7,7 @@
 - CreateAdminUsers
 - SendClaimCodes
 - SendWelcomeEmail
-  - Wait 30 seconds
+  - Wait 10 seconds
 - SendFeedbackEmail
 
 ```bash
@@ -27,9 +27,9 @@ temporal workflow query \
     --type="GetState"
 ```
 
+## Debugging
 
-export LATEST_WORKFLOW_ID=
-
+```bash
 temporal workflow signal \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
     --name ResendClaimCodesSignal
@@ -42,3 +42,4 @@ temporal workflow update \
 temporal workflow query \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
     --type="GetState"
+```
