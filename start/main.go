@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"temporal-saas-customer-onboarding/app"
+	"temporal-saas-customer-onboarding/types"
 
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/client"
@@ -28,7 +29,7 @@ func main() {
 	// Start the Workflow
 	accountName := "Temporal"
 	emails := []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
-	input := app.OnboardingWorkflowInput{AccountName: accountName, Emails: emails}
+	input := types.OnboardingWorkflowInput{AccountName: accountName, Emails: emails}
 
 	wf, err := c.ExecuteWorkflow(
 		context.Background(),

@@ -3,6 +3,7 @@ package messages
 import (
 	"errors"
 	"regexp"
+	"temporal-saas-customer-onboarding/types"
 
 	"go.temporal.io/sdk/workflow"
 )
@@ -13,8 +14,8 @@ func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool) (bo
 
 	err := workflow.SetUpdateHandlerWithOptions(
 		ctx,
-		"AcceptClaimCode",
-		func(ctx workflow.Context, updateInput AcceptClaimCodeInput) error {
+		"AcceptClaimCodeUpdate",
+		func(ctx workflow.Context, updateInput types.AcceptClaimCodeInput) error {
 			*claimed = true
 			return nil
 		},
@@ -29,7 +30,7 @@ func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool) (bo
 	return *claimed, nil
 }
 
-func validateClaimCode(ctx workflow.Context, update AcceptClaimCodeInput) error {
+func validateClaimCode(ctx workflow.Context, update types.AcceptClaimCodeInput) error {
 	logger := workflow.GetLogger(ctx)
 	// Check that the claim code is a 3 letter uppercase string
 	re := regexp.MustCompile(`^[A-Z]{3}$`)
