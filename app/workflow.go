@@ -104,7 +104,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 
 	//	Simulate bug
-	//	panic("Simulated bug - fix me!")
+	// panic("Simulated bug - fix me!")
 
 	if err != nil {
 		return "", err

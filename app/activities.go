@@ -41,6 +41,8 @@ func CreateAdminUsers(ctx context.Context, input types.OnboardingWorkflowInput) 
 		return "failure", errors.New("create admin users activity failed, API unavailable")
 	}
 
+	// return "", temporal.NewNonRetryableApplicationError("create admin users activity failed", "activityFailure", errors.New("create users API failure"))
+
 	return "success", nil
 }
 
