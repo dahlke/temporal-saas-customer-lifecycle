@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 
 	"go.temporal.io/sdk/activity"
 )
@@ -26,18 +25,21 @@ func CreateAccount(ctx context.Context, email string, password string) (string, 
 }
 
 func DeleteAccount(ctx context.Context, email string) (string, error) {
-	result := fmt.Sprintf("Account for %s was deleted", email)
-	return result, nil
+	logger := activity.GetLogger(ctx)
+	logger.Info("deleting account", "email", email)
+	return "success", nil
 }
 
 func CreateAdminUsers(ctx context.Context, emails []string) (string, error) {
-	result := fmt.Sprintf("Created admin accounts for %v", emails)
-	return result, nil
+	logger := activity.GetLogger(ctx)
+	logger.Info("creating admin users", "emails", emails)
+	return "success", nil
 }
 
 func DeleteAdminUsers(ctx context.Context, emails []string) (string, error) {
-	result := fmt.Sprintf("Admin accounts for %v were deleted", emails)
-	return result, nil
+	logger := activity.GetLogger(ctx)
+	logger.Info("deleting admin users", "emails", emails)
+	return "success", nil
 }
 
 func SendClaimCodes(ctx context.Context, email string, code string) (string, error) {
@@ -47,11 +49,13 @@ func SendClaimCodes(ctx context.Context, email string, code string) (string, err
 }
 
 func SendWelcomeEmail(ctx context.Context, emails []string) (string, error) {
-	result := fmt.Sprintf("Sent welcome email to %v", emails)
-	return result, nil
+	logger := activity.GetLogger(ctx)
+	logger.Info("sending welcome email", "emails", emails)
+	return "success", nil
 }
 
 func SendFeedbackEmail(ctx context.Context, emails []string) (string, error) {
-	result := fmt.Sprintf("Sent feedback email to %v", emails)
-	return result, nil
+	logger := activity.GetLogger(ctx)
+	logger.Info("sending feedback email", "emails", emails)
+	return "success", nil
 }

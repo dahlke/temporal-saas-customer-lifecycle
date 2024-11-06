@@ -11,9 +11,11 @@
 - SendFeedbackEmail
 
 ```bash
+export LATEST_WORKFLOW_ID=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}')
+
 temporal workflow signal \
     --workflow-id="<workflow-id>" \
-    --name AcceptClaimCodeSignal
+    --name ResendClaimCodesSignal
 
 temporal workflow update \
     --workflow-id="<workflow-id>" \
@@ -25,12 +27,18 @@ temporal workflow query \
     --type="GetState"
 ```
 
-temporal workflow query \
-    --workflow-id="onboarding-workflow-5343895a-db9b-499e-91c4-ea5c0218ac2c" \
-    --type="GetState"
 
+export LATEST_WORKFLOW_ID=
+
+temporal workflow signal \
+    --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
+    --name ResendClaimCodesSignal
 
 temporal workflow update \
-    --workflow-id="onboarding-workflow-5343895a-db9b-499e-91c4-ea5c0218ac2c" \
+    --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
     --name AcceptClaimCodeUpdate \
     --input '{"claim_code": "XXX"}'
+
+temporal workflow query \
+    --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
+    --type="GetState"

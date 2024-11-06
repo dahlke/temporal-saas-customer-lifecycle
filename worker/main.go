@@ -28,6 +28,7 @@ func main() {
 	w.RegisterActivity(app.DeleteAccount)
 	w.RegisterActivity(app.DeleteAdminUsers)
 	w.RegisterActivity(app.RefundCustomer)
+
 	// Start listening to the Task Queue
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

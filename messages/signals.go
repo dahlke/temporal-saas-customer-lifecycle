@@ -2,7 +2,6 @@ package messages
 
 import "go.temporal.io/sdk/workflow"
 
-// "AcceptClaimCode" signal channel
-func GetSignalChannelForAcceptClaimCode(ctx workflow.Context) workflow.ReceiveChannel {
-	return workflow.GetSignalChannel(ctx, "AcceptClaimCodeSignal")
+func GetSignalChannelForResendClaimCodes(ctx workflow.Context) workflow.ReceiveChannel {
+	return workflow.GetSignalChannel(ctx, "ResendClaimCodesSignal")
 }

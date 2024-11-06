@@ -147,7 +147,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 }
 
 func executeCompensations(ctx workflow.Context, compensations []compensation) {
-	// TODO: review the failure modes here.
+	// TODO: review the failure modes and retry logic
 	logger := workflow.GetLogger(ctx)
 	// Execute compensations in reverse order
 	for i := len(compensations) - 1; i >= 0; i-- {
