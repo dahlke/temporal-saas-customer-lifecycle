@@ -14,7 +14,7 @@ const (
 )
 
 func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
-	// logger := workflow.GetLogger(ctx)
+	logger := workflow.GetLogger(ctx)
 
 	options := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Second * 5,
@@ -47,40 +47,43 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	// TODO: create a compensation class, do compensations
 	// TODO: custom search attributes
 	// TODO: re-send claim codes signal
-	// TODO: add logging of the results
-	// TODO: resend welcome email signal
-	// TODO: resend claim codes signal
+	// TODO: re-send welcome email signal
 	// TODO: comments
 	// TODO: set IsClaimed based on which claim code is accepted
 
 	var chargeResult string
 	err = workflow.ExecuteActivity(ctx, ChargeCustomer, input.AccountName).Get(ctx, &chargeResult)
-
 	if err != nil {
+		logger.Error("Failed to charge customer", "error", err)
 		return "", err
 	}
+	logger.Info("Successfully charged customer", "result", chargeResult)
 
 	var createAccountResult string
 	err = workflow.ExecuteActivity(ctx, CreateAccount, input.AccountName).Get(ctx, &createAccountResult)
-
 	if err != nil {
+		logger.Error("Failed to create account", "error", err)
 		return "", err
 	}
+	logger.Info("Successfully created account", "result", createAccountResult)
 
 	var createAdminUsersResult string
 	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, input.Emails).Get(ctx, &createAdminUsersResult)
-
 	if err != nil {
+		logger.Error("Failed to create admin users", "error", err)
 		return "", err
 	}
+	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
 
 	// Make the claim code a hash of the emails?
 	for _, claimCode := range state.ClaimCodes {
 		var sendClaimCodeResult string
 		err = workflow.ExecuteActivity(ctx, SendClaimCodes, input.AccountName, claimCode.Code).Get(ctx, &sendClaimCodeResult)
 		if err != nil {
+			logger.Error("Failed to send claim code", "error", err, "email", claimCode.Email)
 			return "", err
 		}
+		logger.Info("Successfully sent claim code", "result", sendClaimCodeResult, "email", claimCode.Email)
 	}
 
 	if err != nil {
@@ -106,17 +109,19 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 	var sendWelcomeEmailResult string
 	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input.Emails).Get(ctx, &sendWelcomeEmailResult)
-
 	if err != nil {
+		logger.Error("Failed to send welcome email", "error", err)
 		return "", err
 	}
+	logger.Info("Successfully sent welcome email", "result", sendWelcomeEmailResult)
 
 	var sendFeedbackEmailResult string
 	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input.Emails).Get(ctx, &sendFeedbackEmailResult)
-
 	if err != nil {
+		logger.Error("Failed to send feedback email", "error", err)
 		return "", err
 	}
+	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
 	return sendFeedbackEmailResult, nil
 }
