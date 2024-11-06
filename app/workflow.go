@@ -13,6 +13,9 @@ const (
 	ACCEPTANCE_TIME = 120
 )
 
+// Add this type at the top of the file
+type compensation func(workflow.Context) error
+
 func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
 
@@ -44,36 +47,53 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 
 	// TODO: throw and catch errors
-	// TODO: create a compensation class, do compensations
 	// TODO: custom search attributes
 	// TODO: re-send claim codes signal
 	// TODO: re-send welcome email signal
 	// TODO: comments
 	// TODO: set IsClaimed based on which claim code is accepted
 
+	// Create compensation stack
+	var compensations []compensation
+
+	// Charge customer
 	var chargeResult string
 	err = workflow.ExecuteActivity(ctx, ChargeCustomer, input.AccountName).Get(ctx, &chargeResult)
 	if err != nil {
-		logger.Error("Failed to charge customer", "error", err)
 		return "", err
 	}
 	logger.Info("Successfully charged customer", "result", chargeResult)
+	// Add compensation
+	compensations = append(compensations, func(ctx workflow.Context) error {
+		var refundResult string
+		return workflow.ExecuteActivity(ctx, RefundCustomer, input.AccountName).Get(ctx, &refundResult)
+	})
 
+	// Create account
 	var createAccountResult string
 	err = workflow.ExecuteActivity(ctx, CreateAccount, input.AccountName).Get(ctx, &createAccountResult)
 	if err != nil {
-		logger.Error("Failed to create account", "error", err)
+		executeCompensations(ctx, compensations)
 		return "", err
 	}
 	logger.Info("Successfully created account", "result", createAccountResult)
+	compensations = append(compensations, func(ctx workflow.Context) error {
+		var deleteResult string
+		return workflow.ExecuteActivity(ctx, DeleteAccount, input.AccountName).Get(ctx, &deleteResult)
+	})
 
+	// Create admin users
 	var createAdminUsersResult string
 	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, input.Emails).Get(ctx, &createAdminUsersResult)
 	if err != nil {
-		logger.Error("Failed to create admin users", "error", err)
+		executeCompensations(ctx, compensations)
 		return "", err
 	}
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
+	compensations = append(compensations, func(ctx workflow.Context) error {
+		var deleteUsersResult string
+		return workflow.ExecuteActivity(ctx, DeleteAdminUsers, input.Emails).Get(ctx, &deleteUsersResult)
+	})
 
 	// Make the claim code a hash of the emails?
 	for _, claimCode := range state.ClaimCodes {
@@ -124,4 +144,16 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
 	return sendFeedbackEmailResult, nil
+}
+
+func executeCompensations(ctx workflow.Context, compensations []compensation) {
+	// TODO: review the failure modes here.
+	logger := workflow.GetLogger(ctx)
+	// Execute compensations in reverse order
+	for i := len(compensations) - 1; i >= 0; i-- {
+		if err := compensations[i](ctx); err != nil {
+			logger.Error("Compensation failed", "error", err)
+			// Continue with other compensations even if one fails
+		}
+	}
 }
