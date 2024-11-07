@@ -2,24 +2,31 @@ package messages
 
 import (
 	"errors"
-	"regexp"
+	"fmt"
 	"temporal-saas-customer-onboarding/types"
 
 	"go.temporal.io/sdk/workflow"
 )
 
 // "UpdateClaimCode" update handler
-func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool) (bool, error) {
+func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool, acceptedCode *string, state *types.OnboardingWorkflowState) (bool, error) {
 	logger := workflow.GetLogger(ctx)
 
 	err := workflow.SetUpdateHandlerWithOptions(
 		ctx,
 		"AcceptClaimCodeUpdate",
 		func(ctx workflow.Context, updateInput types.AcceptClaimCodeInput) error {
-			*claimed = true
-			return nil
+			// Only set claimed if the code is valid
+			if isValidClaimCode(updateInput.ClaimCode, state) {
+				*claimed = true
+				*acceptedCode = updateInput.ClaimCode
+				return nil
+			}
+			return fmt.Errorf("claim code %s not found in workflow state", updateInput.ClaimCode)
 		},
-		workflow.UpdateHandlerOptions{Validator: validateClaimCode},
+		workflow.UpdateHandlerOptions{Validator: func(ctx workflow.Context, input types.AcceptClaimCodeInput) error {
+			return validateClaimCode(ctx, input, state)
+		}},
 	)
 
 	if err != nil {
@@ -30,17 +37,35 @@ func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool) (bo
 	return *claimed, nil
 }
 
-func validateClaimCode(ctx workflow.Context, update types.AcceptClaimCodeInput) error {
+func validateClaimCode(ctx workflow.Context, update types.AcceptClaimCodeInput, state *types.OnboardingWorkflowState) error {
 	logger := workflow.GetLogger(ctx)
-	// Check that the claim code is a 3 letter uppercase string
-	re := regexp.MustCompile(`^[A-Z]{3}$`)
 
-	if !re.MatchString(update.ClaimCode) {
-		msg := "Rejecting invalid claim code " + update.ClaimCode
+	// Then check if the code exists in the workflow state
+	if !isValidClaimCode(update.ClaimCode, state) {
+		msg := "Rejecting unknown claim code: " + update.ClaimCode
 		logger.Info(msg)
 		return errors.New(msg)
 	}
 
-	logger.Info("Updating order, address " + update.ClaimCode)
+	// Check if the code has already been claimed
+	for _, code := range state.ClaimCodes {
+		if code.Code == update.ClaimCode && code.IsClaimed {
+			msg := "Rejecting already claimed code: " + update.ClaimCode
+			logger.Info(msg)
+			return errors.New(msg)
+		}
+	}
+
+	logger.Info("Valid claim code received: " + update.ClaimCode)
 	return nil
+}
+
+// Helper function to check if a claim code exists in the workflow state
+func isValidClaimCode(code string, state *types.OnboardingWorkflowState) bool {
+	for _, claimCode := range state.ClaimCodes {
+		if claimCode.Code == code {
+			return true
+		}
+	}
+	return false
 }

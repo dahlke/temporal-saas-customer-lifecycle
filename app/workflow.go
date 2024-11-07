@@ -16,8 +16,6 @@ const (
 
 // TODO: comments
 // TODO: custom search attributes
-// TODO: set IsClaimed based on which claim code is accepted
-// TODO: wait for signal and update
 
 func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
@@ -134,9 +132,10 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	//	Simulate bug
 	// panic("Simulated bug - fix me!")
 
-	// Create a pointer to track the claimed status
+	// Create a pointer to track the claimed status and the accepted code
 	var claimed bool
-	claimed, err = messages.SetUpdateHandlerForAcceptClaimCode(ctx, &claimed)
+	var acceptedCode string
+	claimed, err = messages.SetUpdateHandlerForAcceptClaimCode(ctx, &claimed, &acceptedCode, &state)
 	if err != nil {
 		return "", err
 	}
@@ -149,6 +148,14 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	// If the update wasn't received or was false, fail the workflow
 	if !ok {
 		return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
+	}
+
+	// Update the claim status in the workflow state
+	for i := range state.ClaimCodes {
+		if state.ClaimCodes[i].Code == acceptedCode {
+			state.ClaimCodes[i].IsClaimed = true
+			break
+		}
 	}
 
 	var sendWelcomeEmailResult string

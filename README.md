@@ -6,8 +6,9 @@
 - CreateAccount
 - CreateAdminUsers
 - SendClaimCodes
+  - Wait 2 minutes for claim code to be accepted
 - SendWelcomeEmail
-  - Wait 10 seconds
+  - Wait 10 seconds to send the feedback email
 - SendFeedbackEmail
 
 ```bash
