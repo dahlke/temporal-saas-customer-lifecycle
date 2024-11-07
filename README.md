@@ -32,7 +32,8 @@ temporal workflow query \
 ```bash
 temporal workflow signal \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
-    --name ResendClaimCodesSignal
+    --name ResendClaimCodesSignal \
+    --input '{"email": "neil.dahlke@temporal.io"}'
 
 temporal workflow update \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \

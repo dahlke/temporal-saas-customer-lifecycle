@@ -103,12 +103,36 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		logger.Info("Successfully sent claim code", "result", sendClaimCodeResult, "email", claimCode.Email)
 	}
 
+	// Await signal message to update address
+	logger.Info("Waiting up to 60 seconds for resend claim codes")
+	var signal messages.ResendClaimCodesSignal
+
+	signalChan := messages.GetSignalChannelForResendClaimCodes(ctx)
+
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		for {
+			selector := workflow.NewSelector(ctx)
+			selector.AddReceive(signalChan, func(c workflow.ReceiveChannel, more bool) {
+				c.Receive(ctx, &signal)
+				logger.Info("Received resend claim codes signal")
+
+				// Resend claim codes for each email
+				for _, claimCode := range state.ClaimCodes {
+					var sendClaimCodeResult string
+					err := workflow.ExecuteActivity(ctx, SendClaimCodes, input, claimCode.Code).Get(ctx, &sendClaimCodeResult)
+					if err != nil {
+						logger.Error("Failed to resend claim code", "error", err, "email", claimCode.Email)
+						continue
+					}
+					logger.Info("Successfully resent claim code", "result", sendClaimCodeResult, "email", claimCode.Email)
+				}
+			})
+			selector.Select(ctx)
+		}
+	})
+
 	//	Simulate bug
 	// panic("Simulated bug - fix me!")
-
-	if err != nil {
-		return "", err
-	}
 
 	// Create a pointer to track the claimed status
 	var claimed bool
@@ -136,7 +160,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Successfully sent welcome email", "result", sendWelcomeEmailResult)
 
 	logger.Info("Waiting 10 seconds before sending feedback email")
-	time.Sleep(time.Second * 10)
+	workflow.Sleep(ctx, time.Second*10)
 
 	var sendFeedbackEmailResult string
 	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input).Get(ctx, &sendFeedbackEmailResult)
