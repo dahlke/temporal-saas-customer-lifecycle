@@ -14,11 +14,16 @@ const (
 	ACCEPTANCE_TIME = 120
 )
 
+var onboardingStatusKey = temporal.NewSearchAttributeKeyKeyword("OnboardingStatus")
+
 // TODO: comments
-// TODO: custom search attributes
 
 func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
+
+	logger.Info("Onboarding workflow started", "account_name", input.AccountName, "emails", input.Emails)
+
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("STARTED"))
 
 	retrypolicy := &temporal.RetryPolicy{
 		InitialInterval:    time.Second,
@@ -63,6 +68,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		return "", err
 	}
 
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CHARGING"))
+
 	// Charge customer
 	var chargeResult string
 	err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
@@ -71,6 +78,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 	saga.AddCompensation(RefundCustomer, input)
 	logger.Info("Successfully charged customer", "result", chargeResult)
+
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CREATING_ACCOUNT"))
 
 	// Create account
 	var createAccountResult string
@@ -81,6 +90,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	saga.AddCompensation(DeleteAccount, input)
 	logger.Info("Successfully created account", "result", createAccountResult)
 
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CREATING_ADMIN_USERS"))
+
 	// Create admin users
 	var createAdminUsersResult string
 	err = workflow.ExecuteActivity(ctx, CreateAdminUsers, input).Get(ctx, &createAdminUsersResult)
@@ -89,6 +100,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 	saga.AddCompensation(DeleteAdminUsers, input)
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
+
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_CLAIM_CODES"))
 
 	// Send claim codes
 	for _, claimCode := range state.ClaimCodes {
@@ -100,6 +113,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		}
 		logger.Info("Successfully sent claim code", "result", sendClaimCodeResult, "email", claimCode.Email)
 	}
+
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("WAITING_FOR_CLAIM_CODES"))
 
 	// Await signal message to update address
 	logger.Info("Waiting up to 60 seconds for resend claim codes")
@@ -147,6 +162,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 	// If the update wasn't received or was false, fail the workflow
 	if !ok {
+		workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CODE_NOT_CLAIMED"))
 		return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
 	}
 
@@ -157,6 +173,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 			break
 		}
 	}
+
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
 
 	var sendWelcomeEmailResult string
 	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input).Get(ctx, &sendWelcomeEmailResult)
@@ -169,6 +187,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Waiting 10 seconds before sending feedback email")
 	workflow.Sleep(ctx, time.Second*10)
 
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
+
 	var sendFeedbackEmailResult string
 	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input).Get(ctx, &sendFeedbackEmailResult)
 	if err != nil {
@@ -178,4 +198,6 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
 	return sendFeedbackEmailResult, nil
+
+	// TODO: wait and charge the customer again every 30 days.
 }
