@@ -112,6 +112,9 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	saga.AddCompensation(DeleteAdminUsers, input)
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
 
+	// Simulate bug
+	// panic("Simulated bug - fix me!")
+
 	// Update search attribute to indicate claim code sending phase
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_CLAIM_CODES"))
 
@@ -216,6 +219,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		// You will want to clear out the saga compensations and arguments before you do this.
 
 		// TODO: do this as a detached child workflow to allow this workflow to complete?
+
 		for {
 			// Wait for 30 seconds
 			workflow.Sleep(ctx, time.Second*30)
