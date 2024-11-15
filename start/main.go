@@ -14,8 +14,6 @@ import (
 func main() {
 
 	// Create the client object just once per process
-	// TODO: Temporal Cloud / build of the client
-	// TODO: codec server
 	c, err := client.Dial(client.Options{})
 	if err != nil {
 		log.Fatalln("unable to create Temporal client", err)

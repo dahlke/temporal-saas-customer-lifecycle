@@ -85,3 +85,9 @@ temporal workflow query \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
     --type="GetState"
 ```
+
+## TODO
+
+- Temporal Cloud / build of the client
+- codec server
+- Update readme
