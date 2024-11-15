@@ -209,7 +209,26 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
-	return sendFeedbackEmailResult, nil
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("COMPLETED"))
 
-	// TODO: wait and charge the customer again every 30 days.
+	/*
+		// Now we can wait a period of time and charge the customer on a recurring basis.
+		// You will want to clear out the saga compensations and arguments before you do this.
+
+		for {
+			// Wait for 30 seconds
+			workflow.Sleep(ctx, time.Second*30)
+
+			// Execute the charge activity
+			var chargeResult string
+			err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
+			if err != nil {
+				logger.Error("Failed to charge customer", "error", err)
+				return "", err
+			}
+			logger.Info("Successfully charged customer", "result", chargeResult)
+		}
+	*/
+
+	return sendFeedbackEmailResult, nil
 }
