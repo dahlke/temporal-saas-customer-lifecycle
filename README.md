@@ -88,6 +88,5 @@ temporal workflow query \
 
 ## TODO
 
-- Temporal Cloud / build of the client
 - codec server
 - Update readme
