@@ -6,6 +6,9 @@ export TEMPORAL_ADDRESS=$(temporal env get --env ${TEMPORAL_ENV} --key address -
 export TEMPORAL_NAMESPACE=$(temporal env get --env ${TEMPORAL_ENV} --key namespace -o json | jq -r '.[].value')
 export TEMPORAL_CERT_PATH=$(temporal env get --env ${TEMPORAL_ENV} --key tls-cert-path -o json | jq -r '.[].value')
 export TEMPORAL_KEY_PATH=$(temporal env get --env ${TEMPORAL_ENV} --key tls-key-path -o json | jq -r '.[].value')
+# These are the paths required for the `temporal` CLI
+export TEMPORAL_TLS_CERT=$(temporal env get --env ${TEMPORAL_ENV} --key tls-cert-path -o json | jq -r '.[].value')
+export TEMPORAL_TLS_KEY=$(temporal env get --env ${TEMPORAL_ENV} --key tls-key-path -o json | jq -r '.[].value')
 
 # Required
 export TEMPORAL_CLOUD_API_KEY="<temporal_cloud_api_key>"
