@@ -16,15 +16,17 @@ const (
 
 var onboardingStatusKey = temporal.NewSearchAttributeKeyKeyword("OnboardingStatus")
 
-// TODO: comments
-
+// OnboardingWorkflow orchestrates the onboarding process for a new customer.
 func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
 
+	// Log the start of the workflow
 	logger.Info("Onboarding workflow started", "account_name", input.AccountName, "emails", input.Emails)
 
+	// Set initial search attribute for the workflow
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("STARTED"))
 
+	// Define retry policy for activities
 	retrypolicy := &temporal.RetryPolicy{
 		InitialInterval:    time.Second,
 		BackoffCoefficient: 2.0,
@@ -32,14 +34,18 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		MaximumAttempts:    10,
 	}
 
+	// Set activity options with retry policy
 	options := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Second * 60,
 		RetryPolicy:         retrypolicy,
 	}
 
+	// Apply activity options to the context
 	ctx = workflow.WithActivityOptions(ctx, options)
 	var err error
 	var saga Saga
+
+	// Ensure compensation in case of error
 	defer func() {
 		if err != nil {
 			disconnectedCtx, _ := workflow.NewDisconnectedContext(ctx)
@@ -47,6 +53,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		}
 	}()
 
+	// Initialize workflow state
 	state := types.OnboardingWorkflowState{
 		AccountName: input.AccountName,
 		Emails:      input.Emails,
@@ -63,11 +70,13 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		}
 	}
 
+	// Set query handler for the workflow state
 	err = messages.SetQueryHandlerForState(ctx, &state)
 	if err != nil {
 		return "", err
 	}
 
+	// Update search attribute to indicate charging phase
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CHARGING"))
 
 	// Charge customer
@@ -79,6 +88,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	saga.AddCompensation(RefundCustomer, input)
 	logger.Info("Successfully charged customer", "result", chargeResult)
 
+	// Update search attribute to indicate account creation phase
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CREATING_ACCOUNT"))
 
 	// Create account
@@ -90,6 +100,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	saga.AddCompensation(DeleteAccount, input)
 	logger.Info("Successfully created account", "result", createAccountResult)
 
+	// Update search attribute to indicate admin user creation phase
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CREATING_ADMIN_USERS"))
 
 	// Create admin users
@@ -101,6 +112,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	saga.AddCompensation(DeleteAdminUsers, input)
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
 
+	// Update search attribute to indicate claim code sending phase
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_CLAIM_CODES"))
 
 	// Send claim codes
@@ -114,14 +126,17 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		logger.Info("Successfully sent claim code", "result", sendClaimCodeResult, "email", claimCode.Email)
 	}
 
+	// Update search attribute to indicate waiting for claim codes
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("WAITING_FOR_CLAIM_CODES"))
 
 	// Await signal message to update address
 	logger.Info("Waiting up to 60 seconds for resend claim codes")
 	var signal messages.ResendClaimCodesSignal
 
+	// Get signal channel for resend claim codes
 	signalChan := messages.GetSignalChannelForResendClaimCodes(ctx)
 
+	// Goroutine to handle resend claim codes signal
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		for {
 			selector := workflow.NewSelector(ctx)
@@ -143,9 +158,6 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 			selector.Select(ctx)
 		}
 	})
-
-	//	Simulate bug
-	// panic("Simulated bug - fix me!")
 
 	// Create a pointer to track the claimed status and the accepted code
 	var claimed bool
