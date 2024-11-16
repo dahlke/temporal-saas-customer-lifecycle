@@ -1,16 +1,36 @@
 # temporal-saas-customer-onboarding
 
-## Onboarding Steps
+## Onboarding Workflow
 
 - ChargeCustomer
 - CreateAccount
+  - RefundCustomer if error
 - CreateAdminUsers
+  - RefundCustomer and DeleteAccount if error
 - SendClaimCodes
-  - Wait 2 minutes for claim code to be accepted
+  - Wait 2 minutes
+  - ResendClaimCodesSignal to resend claim codes
+  - AcceptClaimCodeUpdate to accept claim code
+  - RefundCustomer, DeleteAccount, and DeleteAdminUsers if error
 - SendWelcomeEmail
   - Wait 10 seconds to send the feedback email
 - SendFeedbackEmail
-- ChargeCustomer on a loop until the subscription is canceled
+  - Clear our Saga compensations
+- ChargeCustomer on a loop every 10 seconds
+  - CancelSubscriptionSignal to cancel
+
+## Onboarding Signals
+
+- CancelSubscriptionSignal
+- ResendClaimCodesSignal
+
+## Onboarding Updates
+
+- AcceptClaimCodeUpdate
+
+## Onboarding Queries
+
+- GetState
 
 ## Setup
 
@@ -52,8 +72,15 @@ tcld namespace search-attributes add -n $TEMPORAL_NAMESPACE --sa "OnboardingStat
 
 ### Interacting with the Workflow
 
+As a helper function, we can export the latest workflow id to a variable.
+
 ```bash
 export LATEST_WORKFLOW_ID=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}')
+```
+
+The generic format to interact with the workflow is as follows:
+
+```bash
 
 temporal workflow signal \
     --workflow-id="<workflow-id>" \
@@ -66,14 +93,14 @@ temporal workflow signal \
 temporal workflow update \
     --workflow-id="<workflow-id>" \
     --name AcceptClaimCodeUpdate \
-    --input '{"claim_code": "XXX"}'
+    --input '{"claim_code": "<claim_code>"}'
 
 temporal workflow query \
     --workflow-id="<workflow-id>" \
     --type="GetState"
 ```
 
-#### Debugging
+And if you want to debug the most recent workflow, you can use the following commands:
 
 ```bash
 temporal workflow signal \
@@ -98,5 +125,5 @@ temporal workflow query \
 
 ## TODO
 
-- codec server
+- codec server / encrypt_payloads
 - Update readme

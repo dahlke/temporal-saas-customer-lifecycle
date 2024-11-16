@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ACCEPTANCE_TIME = 120
+	ACCEPTANCE_TIME = 120 // Time in seconds to wait for claim codes to be accepted
 )
 
 var onboardingStatusKey = temporal.NewSearchAttributeKeyKeyword("OnboardingStatus")
@@ -192,6 +192,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
 
+	// Send welcome email
 	var sendWelcomeEmailResult string
 	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input).Get(ctx, &sendWelcomeEmailResult)
 	if err != nil {
@@ -200,11 +201,13 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 	logger.Info("Successfully sent welcome email", "result", sendWelcomeEmailResult)
 
+	// Wait before sending feedback email
 	logger.Info("Waiting 10 seconds before sending feedback email")
 	workflow.Sleep(ctx, time.Second*10)
 
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
 
+	// Send feedback email
 	var sendFeedbackEmailResult string
 	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input).Get(ctx, &sendFeedbackEmailResult)
 	if err != nil {
@@ -215,8 +218,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("COMPLETED"))
 
-	// Now we can wait a period of time and charge the customer on a recurring basis.
-	// Clear the saga compensations and arguments so we can start fresh now that the user is onboarded.
+	// Clear saga compensations as the group is onboarded
 	saga.ClearCompensations()
 
 	// Create a channel to receive the cancel subscription signal
@@ -247,6 +249,10 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 		logger.Info("Successfully charged customer", "result", chargeResult)
 	}
+
+	// TODO: we could also clean up the admin users and account here
+	// saga.AddCompensation(DeleteAccount, input)
+	// saga.AddCompensation(DeleteAdminUsers, input)
 
 	return sendFeedbackEmailResult, nil
 }
