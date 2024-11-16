@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
 	"temporal-saas-customer-onboarding/types"
 
 	"go.temporal.io/sdk/activity"
@@ -36,10 +35,12 @@ func CreateAdminUsers(ctx context.Context, input types.OnboardingWorkflowInput) 
 	logger := activity.GetLogger(ctx)
 	logger.Info("creating admin users", "emails", input.Emails)
 
-	info := activity.GetInfo(ctx)
-	if info.Attempt < 5 {
-		return "failure", errors.New("create admin users activity failed, API unavailable")
-	}
+	/*
+		info := activity.GetInfo(ctx)
+		if info.Attempt < 5 {
+			return "failure", errors.New("create admin users activity failed, API unavailable")
+		}
+	*/
 
 	// return "", temporal.NewNonRetryableApplicationError("create admin users activity failed", "activityFailure", errors.New("create users API failure"))
 

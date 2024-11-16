@@ -13,6 +13,12 @@ func (s *Saga) AddCompensation(activity any, parameters ...any) {
 	s.arguments = append(s.arguments, parameters)       // Append the parameters to the arguments list
 }
 
+// ClearCompensations clears the compensations and arguments from the saga so we can start fresh.
+func (s *Saga) ClearCompensations() {
+	s.compensations = nil
+	s.arguments = nil
+}
+
 // Compensate executes all compensation activities in reverse order
 func (s Saga) Compensate(ctx workflow.Context) {
 	logger := workflow.GetLogger(ctx)         // Get a logger from the workflow context

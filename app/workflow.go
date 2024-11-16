@@ -57,6 +57,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	state := types.OnboardingWorkflowState{
 		AccountName: input.AccountName,
 		Emails:      input.Emails,
+		Price:       input.Price,
 		ClaimCodes:  make([]types.ClaimCodeStatus, len(input.Emails)),
 	}
 
@@ -133,17 +134,17 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("WAITING_FOR_CLAIM_CODES"))
 
 	// Await signal message to update address
-	logger.Info("Waiting up to 60 seconds for resend claim codes")
+	logger.Info(fmt.Sprintf("Waiting up to %d seconds for claim codes", ACCEPTANCE_TIME))
 	var signal messages.ResendClaimCodesSignal
 
 	// Get signal channel for resend claim codes
-	signalChan := messages.GetSignalChannelForResendClaimCodes(ctx)
+	claimCodesSignalChan := messages.GetSignalChannelForResendClaimCodes(ctx)
 
 	// Goroutine to handle resend claim codes signal
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		for {
 			selector := workflow.NewSelector(ctx)
-			selector.AddReceive(signalChan, func(c workflow.ReceiveChannel, more bool) {
+			selector.AddReceive(claimCodesSignalChan, func(c workflow.ReceiveChannel, more bool) {
 				c.Receive(ctx, &signal)
 				logger.Info("Received resend claim codes signal")
 
@@ -214,26 +215,38 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("COMPLETED"))
 
-	/*
-		// Now we can wait a period of time and charge the customer on a recurring basis.
-		// You will want to clear out the saga compensations and arguments before you do this.
+	// Now we can wait a period of time and charge the customer on a recurring basis.
+	// Clear the saga compensations and arguments so we can start fresh now that the user is onboarded.
+	saga.ClearCompensations()
 
-		// TODO: do this as a detached child workflow to allow this workflow to complete?
+	// Create a channel to receive the cancel subscription signal
+	cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)
 
-		for {
-			// Wait for 30 seconds
-			workflow.Sleep(ctx, time.Second*30)
+	subscriptionCanceled := false
+	for !subscriptionCanceled {
+		logger.Info("Waiting for 10 seconds to charge the customer or until a cancel subscription signal is received")
+		// Wait for 10 seconds or until a cancel subscription signal is received
+		selector := workflow.NewSelector(ctx)
+		selector.AddReceive(cancelSubscriptionSignalChan, func(c workflow.ReceiveChannel, more bool) {
+			// Break the loop when the signal is received
+			logger.Info("Received cancel subscription signal")
+			subscriptionCanceled = true
+		})
+		selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
+			// Timer expired, continue the loop
+		})
+		selector.Select(ctx)
 
-			// Execute the charge activity
-			var chargeResult string
-			err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
-			if err != nil {
-				logger.Error("Failed to charge customer", "error", err)
-				return "", err
-			}
-			logger.Info("Successfully charged customer", "result", chargeResult)
+		// Execute the charge activity
+		var chargeResult string
+		err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
+		if err != nil {
+			logger.Error("Failed to charge customer", "error", err)
+			return "", err
 		}
-	*/
+
+		logger.Info("Successfully charged customer", "result", chargeResult)
+	}
 
 	return sendFeedbackEmailResult, nil
 }

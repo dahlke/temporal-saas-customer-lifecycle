@@ -10,6 +10,7 @@
 - SendWelcomeEmail
   - Wait 10 seconds to send the feedback email
 - SendFeedbackEmail
+- ChargeCustomer on a loop until the subscription is canceled
 
 ## Setup
 
@@ -58,6 +59,10 @@ temporal workflow signal \
     --workflow-id="<workflow-id>" \
     --name ResendClaimCodesSignal
 
+temporal workflow signal \
+    --workflow-id="<workflow-id>" \
+    --name CancelSubscriptionSignal
+
 temporal workflow update \
     --workflow-id="<workflow-id>" \
     --name AcceptClaimCodeUpdate \
@@ -74,6 +79,11 @@ temporal workflow query \
 temporal workflow signal \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
     --name ResendClaimCodesSignal \
+    --input '{"email": "neil.dahlke@temporal.io"}'
+
+temporal workflow signal \
+    --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
+    --name CancelSubscriptionSignal \
     --input '{"email": "neil.dahlke@temporal.io"}'
 
 temporal workflow update execute \
