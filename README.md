@@ -123,7 +123,11 @@ temporal workflow query \
     --type="GetState"
 ```
 
+### Using the SA Shared Codec Server
+
+In the Temporal UI, configure your Codec server to use `https://codec.tmprl-demo.cloud` and check
+the "pass the user access token" box.
+
 ## TODO
 
-- codec server / encrypt_payloads
 - Update readme

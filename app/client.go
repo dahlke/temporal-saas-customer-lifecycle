@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"temporal-saas-customer-onboarding/encryption"
 
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/converter"
 	tlog "go.temporal.io/sdk/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -110,6 +112,14 @@ func GetClientOptions() client.Options {
 				Certificates: []tls.Certificate{cert},
 			},
 		}
+	}
+
+	encryptPayloads := GetEnv("ENCRYPT_PAYLOADS", "false")
+	if encryptPayloads == "true" {
+		clientOptions.DataConverter = encryption.NewEncryptionDataConverter(
+			converter.GetDefaultDataConverter(),
+			encryption.DataConverterOptions{KeyID: "test", Compress: false},
+		)
 	}
 
 	return clientOptions

@@ -216,7 +216,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("COMPLETED"))
+	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("ONBOARDED"))
 
 	// Clear saga compensations as the group is onboarded
 	saga.ClearCompensations()
@@ -225,7 +225,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)
 
 	subscriptionCanceled := false
-	for !subscriptionCanceled {
+	numRenews := 0
+	for {
 		logger.Info("Waiting for 10 seconds to charge the customer or until a cancel subscription signal is received")
 		// Wait for 10 seconds or until a cancel subscription signal is received
 		selector := workflow.NewSelector(ctx)
@@ -233,11 +234,17 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 			// Break the loop when the signal is received
 			logger.Info("Received cancel subscription signal")
 			subscriptionCanceled = true
+			workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
 		})
 		selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
 			// Timer expired, continue the loop
 		})
 		selector.Select(ctx)
+
+		// Check if the subscription was canceled
+		if subscriptionCanceled {
+			break
+		}
 
 		// Execute the charge activity
 		var chargeResult string
@@ -247,6 +254,8 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 			return "", err
 		}
 
+		numRenews++
+		workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet(fmt.Sprintf("RENEWED_%d", numRenews)))
 		logger.Info("Successfully charged customer", "result", chargeResult)
 	}
 
