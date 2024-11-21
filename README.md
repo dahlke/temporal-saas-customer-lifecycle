@@ -1,5 +1,7 @@
 # temporal-saas-customer-onboarding
 
+This demo shows how to implement a naive customer onboarding workflow using Temporal.
+
 ## Onboarding Workflow
 
 - ChargeCustomer
@@ -70,6 +72,30 @@ If you are not already logged into Temporal Cloud with `tcld` run `tcld login`.
 tcld namespace search-attributes add -n $TEMPORAL_NAMESPACE --sa "OnboardingStatus=Text"
 ```
 
+### Using Encryption
+
+This demo supports encrypting the data sent to Temporal Cloud. In order to do so, you'll need to set the following environment variable.
+
+```bash
+export ENCRYPT_PAYLOADS=true
+```
+
+### Running the Demo
+
+With your environment variables set, you can run the worker.
+
+```bash
+go run worker/main.go
+```
+
+### Running the Starter
+
+Also with your environment variables set, you can run the starter.
+
+```bash
+go run starter/main.go
+```
+
 ### Interacting with the Workflow
 
 As a helper function, we can export the latest workflow id to a variable.
@@ -127,7 +153,3 @@ temporal workflow query \
 
 In the Temporal UI, configure your Codec server to use `https://codec.tmprl-demo.cloud` and check
 the "pass the user access token" box.
-
-## TODO
-
-- Update readme

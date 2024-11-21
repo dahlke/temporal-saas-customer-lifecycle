@@ -201,6 +201,9 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 	logger.Info("Successfully sent welcome email", "result", sendWelcomeEmailResult)
 
+	// Clear saga compensations as the group is onboarded
+	saga.ClearCompensations()
+
 	// Wait before sending feedback email
 	logger.Info("Waiting 10 seconds before sending feedback email")
 	workflow.Sleep(ctx, time.Second*10)
@@ -217,9 +220,6 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("ONBOARDED"))
-
-	// Clear saga compensations as the group is onboarded
-	saga.ClearCompensations()
 
 	// Create a channel to receive the cancel subscription signal
 	cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)
