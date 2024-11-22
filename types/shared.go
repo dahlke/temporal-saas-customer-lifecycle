@@ -21,4 +21,5 @@ type OnboardingWorkflowInput struct {
 	AccountName string   `json:"account_name"`
 	Emails      []string `json:"emails"`
 	Price       float64  `json:"price"`
+	Scenario    string   `json:"scenario"`
 }

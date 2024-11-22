@@ -10,10 +10,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const (
-	ACCEPTANCE_TIME = 120 // Time in seconds to wait for claim codes to be accepted
-)
-
 var onboardingStatusKey = temporal.NewSearchAttributeKeyKeyword("OnboardingStatus")
 
 // OnboardingWorkflow orchestrates the onboarding process for a new customer.
@@ -32,6 +28,10 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		BackoffCoefficient: 2.0,
 		MaximumInterval:    time.Second * 10,
 		MaximumAttempts:    10,
+		/*
+			NonRetryableErrorTypes: []string{
+			},
+		*/
 	}
 
 	// Set activity options with retry policy
@@ -113,8 +113,11 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	saga.AddCompensation(DeleteAdminUsers, input)
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
 
-	// Simulate bug
-	// panic("Simulated bug - fix me!")
+	if input.Scenario == SCENARIO_BUG {
+		// Simulate bug
+		// NOTE: comment out this line to see the happy path
+		panic("Simulated bug - fix me!")
+	}
 
 	// Update search attribute to indicate claim code sending phase
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_CLAIM_CODES"))

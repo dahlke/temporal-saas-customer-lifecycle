@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-
 	// Create the client object just once per process
 	c, err := client.Dial(app.GetClientOptions())
 	if err != nil {
@@ -22,14 +21,19 @@ func main() {
 
 	options := client.StartWorkflowOptions{
 		ID:        "onboarding-workflow-" + uuid.New().String(),
-		TaskQueue: app.OnboardingTaskQueue,
+		TaskQueue: app.ONBOARDING_TASK_QUEUE,
 	}
 
 	// Start the Workflow
 	accountName := "Temporal"
 	emails := []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
 	price := 10.0
-	input := types.OnboardingWorkflowInput{AccountName: accountName, Emails: emails, Price: price}
+	input := types.OnboardingWorkflowInput{
+		AccountName: accountName,
+		Emails:      emails,
+		Price:       price,
+		Scenario:    app.SCENARIO_FLAKEY_API,
+	}
 
 	wf, err := c.ExecuteWorkflow(
 		context.Background(),
@@ -37,6 +41,7 @@ func main() {
 		app.OnboardingWorkflow,
 		input,
 	)
+
 	if err != nil {
 		log.Fatalln("unable to complete Workflow", err)
 	}

@@ -17,7 +17,7 @@ func main() {
 	defer c.Close()
 
 	// This worker hosts both Workflow and Activity functions
-	w := worker.New(c, app.OnboardingTaskQueue, worker.Options{})
+	w := worker.New(c, app.ONBOARDING_TASK_QUEUE, worker.Options{})
 	w.RegisterWorkflow(app.OnboardingWorkflow)
 	w.RegisterActivity(app.ChargeCustomer)
 	w.RegisterActivity(app.CreateAccount)

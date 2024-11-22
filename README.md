@@ -50,7 +50,7 @@ created. If you are using the Temporal dev server, use the `operator search-attr
 command.
 
 ```bash
-temporal operator search-attribute create --namespace $TEMPORAL_NAMESPACE --name OnboardingStatus --type text
+temporal operator search-attribute create --namespace default --name OnboardingStatus --type text
 ```
 
 ### Configuring Temporal Cloud (Option #2)
