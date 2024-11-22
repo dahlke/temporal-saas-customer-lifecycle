@@ -6,6 +6,8 @@ import (
 	"temporal-saas-customer-onboarding/types"
 	"time"
 
+	"github.com/google/uuid"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -113,7 +115,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	saga.AddCompensation(DeleteAdminUsers, input)
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
 
-	if input.Scenario == SCENARIO_BUG {
+	if input.Scenario == SCENARIO_UNEXPECTED_BUG {
 		// Simulate bug
 		// NOTE: comment out this line to see the happy path
 		panic("Simulated bug - fix me!")
@@ -224,42 +226,57 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("ONBOARDED"))
 
-	// Create a channel to receive the cancel subscription signal
-	cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)
-
-	subscriptionCanceled := false
-	numRenews := 0
-	for {
-		logger.Info("Waiting for 10 seconds to charge the customer or until a cancel subscription signal is received")
-		// Wait for 10 seconds or until a cancel subscription signal is received
-		selector := workflow.NewSelector(ctx)
-		selector.AddReceive(cancelSubscriptionSignalChan, func(c workflow.ReceiveChannel, more bool) {
-			// Break the loop when the signal is received
-			logger.Info("Received cancel subscription signal")
-			subscriptionCanceled = true
-			workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
-		})
-		selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
-			// Timer expired, continue the loop
-		})
-		selector.Select(ctx)
-
-		// Check if the subscription was canceled
-		if subscriptionCanceled {
-			break
+	if input.Scenario == SCENARIO_CHILD_WORKFLOW {
+		// Start the subscription child workflow
+		ChildWorkflowOptions := workflow.ChildWorkflowOptions{
+			WorkflowID:        fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String()),
+			ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 		}
-
-		// Execute the charge activity
-		var chargeResult string
-		err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
+		ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
+		err := workflow.ExecuteChildWorkflow(ctx, SubscriptionChildWorkflow, input).Get(ctx, nil)
 		if err != nil {
-			logger.Error("Failed to charge customer", "error", err)
+			logger.Error("Failed to start subscription child workflow", "error", err)
 			return "", err
 		}
+		logger.Info("Started Child Workflow: " + ChildWorkflowOptions.WorkflowID)
+	} else {
+		// Create a channel to receive the cancel subscription signal
+		cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)
 
-		numRenews++
-		workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet(fmt.Sprintf("RENEWED_%d", numRenews)))
-		logger.Info("Successfully charged customer", "result", chargeResult)
+		subscriptionCanceled := false
+		numRenews := 0
+		for {
+			logger.Info("Waiting for 10 seconds to charge the customer or until a cancel subscription signal is received")
+			// Wait for 10 seconds or until a cancel subscription signal is received
+			selector := workflow.NewSelector(ctx)
+			selector.AddReceive(cancelSubscriptionSignalChan, func(c workflow.ReceiveChannel, more bool) {
+				// Break the loop when the signal is received
+				logger.Info("Received cancel subscription signal")
+				subscriptionCanceled = true
+				workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
+			})
+			selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
+				// Timer expired, continue the loop
+			})
+			selector.Select(ctx)
+
+			// Check if the subscription was canceled
+			if subscriptionCanceled {
+				break
+			}
+
+			// Execute the charge activity
+			var chargeResult string
+			err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
+			if err != nil {
+				logger.Error("Failed to charge customer", "error", err)
+				return "", err
+			}
+
+			numRenews++
+			workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet(fmt.Sprintf("RENEWED_%d", numRenews)))
+			logger.Info("Successfully charged customer", "result", chargeResult)
+		}
 	}
 
 	// TODO: we could also clean up the admin users and account here

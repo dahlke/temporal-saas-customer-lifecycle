@@ -32,7 +32,7 @@ func main() {
 		AccountName: accountName,
 		Emails:      emails,
 		Price:       price,
-		Scenario:    app.SCENARIO_FLAKEY_API,
+		Scenario:    app.SCENARIO_CHILD_WORKFLOW,
 	}
 
 	wf, err := c.ExecuteWorkflow(

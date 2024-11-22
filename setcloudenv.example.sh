@@ -11,7 +11,6 @@ export TEMPORAL_TLS_CERT=$(temporal env get --env ${TEMPORAL_ENV} --key tls-cert
 export TEMPORAL_TLS_KEY=$(temporal env get --env ${TEMPORAL_ENV} --key tls-key-path -o json | jq -r '.[].value')
 
 # Required
-export TEMPORAL_CLOUD_API_KEY="<temporal_cloud_api_key>"
 export TF_VAR_prefix="<your_name>"
 
 # Optional

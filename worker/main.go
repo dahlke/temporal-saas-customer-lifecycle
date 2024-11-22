@@ -19,6 +19,7 @@ func main() {
 	// This worker hosts both Workflow and Activity functions
 	w := worker.New(c, app.ONBOARDING_TASK_QUEUE, worker.Options{})
 	w.RegisterWorkflow(app.OnboardingWorkflow)
+	w.RegisterWorkflow(app.SubscriptionChildWorkflow)
 	w.RegisterActivity(app.ChargeCustomer)
 	w.RegisterActivity(app.CreateAccount)
 	w.RegisterActivity(app.CreateAdminUsers)

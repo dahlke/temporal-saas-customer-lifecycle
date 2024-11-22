@@ -14,6 +14,15 @@ func ChargeCustomer(ctx context.Context, input types.OnboardingWorkflowInput) (s
 	logger := activity.GetLogger(ctx)
 	logger.Info("charging customer", "customer_id", input.AccountName, "amount", input.Price)
 	time.Sleep(1 * time.Second)
+
+	if input.Scenario == SCENARIO_EXPECTED_ERROR {
+		// TODO: make this a non-retryable error type
+		return "", temporal.NewNonRetryableApplicationError(
+			"charge customer activity failed, card invalid", "activityFailure",
+			errors.New("charge customer API failure, card invalid"),
+		)
+	}
+
 	return "success", nil
 }
 
@@ -43,10 +52,7 @@ func CreateAdminUsers(ctx context.Context, input types.OnboardingWorkflowInput) 
 	logger.Info("creating admin users", "emails", input.Emails)
 	time.Sleep(1 * time.Second)
 
-	if input.Scenario == SCENARIO_EXPECTED_ERROR {
-		// TODO: make this a non-retryable error type
-		return "", temporal.NewNonRetryableApplicationError("create admin users activity failed", "activityFailure", errors.New("create users API failure"))
-	} else if input.Scenario == SCENARIO_FLAKEY_API {
+	if input.Scenario == SCENARIO_FLAKEY_API {
 		info := activity.GetInfo(ctx)
 		if info.Attempt < 5 {
 			return "failure", errors.New("create admin users activity failed, API unavailable")

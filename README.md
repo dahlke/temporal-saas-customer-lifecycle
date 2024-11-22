@@ -2,6 +2,20 @@
 
 This demo shows how to implement a naive customer onboarding workflow using Temporal.
 
+| Prerequisites      |    | __ | Features       |    | __ | Patterns            |    |
+|:-------------------|----|----|----------------|----|----|---------------------|----|
+| Network Connection | ✅ | __ | Timer          | ✅ | __ | Entity              | ✅ |
+| Golang 1.18+       | ✅ | __ | Update         | ✅ | __ | Long-Running        | ✅ |
+|                    |    | __ | Signal         | ✅ | __ | Fanout              | ✅ |
+|                    |    | __ | Query          | ✅ | __ | Continue As New     |    |
+|                    |    | __ | Data Converter | ✅ | __ | Manual Intervention | ✅ |
+|                    |    | __ | mTLS Keys      | ✅ | __ | Saga                | ✅ |
+|                    |    | __ | Retry          | ✅ | __ |                     |    |
+|                    |    | __ | Data Converter | ✅ | __ |                     |    |
+|                    |    | __ | Child Workflow | ✅ | __ |                     |    |
+|                    |    | __ | Polyglot       |    | __ |                     |    |
+|                    |    | __ | API Keys       |    | __ |                     |    |
+
 ## Onboarding Workflow
 
 - ChargeCustomer
@@ -19,6 +33,7 @@ This demo shows how to implement a naive customer onboarding workflow using Temp
 - SendFeedbackEmail
   - Clear our Saga compensations
 - ChargeCustomer on a loop every 10 seconds
+  - NOTE: this runs in a child workflow if the scenario is set to `SCENARIO_CHILD_WORKFLOW`
   - CancelSubscriptionSignal to cancel
 
 ## Onboarding Signals
@@ -33,6 +48,14 @@ This demo shows how to implement a naive customer onboarding workflow using Temp
 ## Onboarding Queries
 
 - GetState
+
+## Onboarding Scenarios
+
+- Happy Path
+- Flakey API
+- Unexpected Bug
+- Expected Error
+- Child Workflow
 
 ## Setup
 
