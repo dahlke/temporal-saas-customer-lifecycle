@@ -1,6 +1,6 @@
-# temporal-saas-customer-onboarding
+# temporal-saas-customer-lifecycle
 
-This demo shows how to implement a naive customer onboarding workflow using Temporal.
+This demo shows how to implement a naive customer lifecycle workflow using Temporal.
 
 | Prerequisites      |    | __ | Features       |    | __ | Patterns            |    |
 |:-------------------|----|----|----------------|----|----|---------------------|----|
@@ -16,7 +16,7 @@ This demo shows how to implement a naive customer onboarding workflow using Temp
 |                    |    | __ | Polyglot       |    | __ |                     |    |
 |                    |    | __ | API Keys       |    | __ |                     |    |
 
-## Onboarding Workflow
+## Lifecycle Workflow
 
 - ChargeCustomer
 - CreateAccount
@@ -36,20 +36,20 @@ This demo shows how to implement a naive customer onboarding workflow using Temp
   - NOTE: this runs in a child workflow if the scenario is set to `SCENARIO_CHILD_WORKFLOW`
   - CancelSubscriptionSignal to cancel
 
-## Onboarding Signals
+## Lifecycle Signals
 
 - CancelSubscriptionSignal
 - ResendClaimCodesSignal
 
-## Onboarding Updates
+## Lifecycle Updates
 
 - AcceptClaimCodeUpdate
 
-## Onboarding Queries
+## Lifecycle Queries
 
 - GetState
 
-## Onboarding Scenarios
+## Lifecycle Scenarios
 
 - Happy Path
 - Flakey API
@@ -73,7 +73,7 @@ created. If you are using the Temporal dev server, use the `operator search-attr
 command.
 
 ```bash
-temporal operator search-attribute create --namespace default --name OnboardingStatus --type text
+temporal operator search-attribute create --namespace default --name LifecycleStatus --type text
 ```
 
 ### Configuring Temporal Cloud (Option #2)
@@ -85,14 +85,14 @@ export TEMPORAL_ADDRESS="<namespace>.<accountId>.tmprl.cloud:7233"
 export TEMPORAL_CERT_PATH="/path/to/ca.pem"
 export TEMPORAL_KEY_PATH="/path/to/ca.key"
 export TEMPORAL_NAMESPACE="<namespace>"
-export TEMPORAL_ONBOARDING_TASK_QUEUE="onboarding"
+export TEMPORAL_ONBOARDING_TASK_QUEUE="lifecycle"
 ```
 
 If you are using Temporal Cloud, the command will look a bit different, using `tcld namespace search-attributes-add`.
 If you are not already logged into Temporal Cloud with `tcld` run `tcld login`.
 
 ```bash
-tcld namespace search-attributes add -n $TEMPORAL_NAMESPACE --sa "OnboardingStatus=Text"
+tcld namespace search-attributes add -n $TEMPORAL_NAMESPACE --sa "LifecycleStatus=Text"
 ```
 
 ### Using Encryption

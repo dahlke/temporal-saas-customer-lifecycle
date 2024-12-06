@@ -1,4 +1,4 @@
-module temporal-saas-customer-onboarding
+module temporal-saas-customer-lifecycle
 
 go 1.23.1
 

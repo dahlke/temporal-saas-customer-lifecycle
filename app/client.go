@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"temporal-saas-customer-onboarding/encryption"
+	"temporal-saas-customer-lifecycle/encryption"
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"

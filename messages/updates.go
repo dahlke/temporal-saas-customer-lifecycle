@@ -3,13 +3,13 @@ package messages
 import (
 	"errors"
 	"fmt"
-	"temporal-saas-customer-onboarding/types"
+	"temporal-saas-customer-lifecycle/types"
 
 	"go.temporal.io/sdk/workflow"
 )
 
 // "UpdateClaimCode" update handler
-func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool, acceptedCode *string, state *types.OnboardingWorkflowState) (bool, error) {
+func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool, acceptedCode *string, state *types.LifecycleWorkflowState) (bool, error) {
 	logger := workflow.GetLogger(ctx)
 
 	// Set an update handler with options for the "AcceptClaimCodeUpdate" operation
@@ -45,7 +45,7 @@ func SetUpdateHandlerForAcceptClaimCode(ctx workflow.Context, claimed *bool, acc
 }
 
 // Function to validate the claim code
-func validateClaimCode(ctx workflow.Context, update types.AcceptClaimCodeInput, state *types.OnboardingWorkflowState) error {
+func validateClaimCode(ctx workflow.Context, update types.AcceptClaimCodeInput, state *types.LifecycleWorkflowState) error {
 	logger := workflow.GetLogger(ctx)
 
 	// Check if the code exists in the workflow state
@@ -70,7 +70,7 @@ func validateClaimCode(ctx workflow.Context, update types.AcceptClaimCodeInput, 
 }
 
 // Helper function to check if a claim code exists in the workflow state
-func isValidClaimCode(code string, state *types.OnboardingWorkflowState) bool {
+func isValidClaimCode(code string, state *types.LifecycleWorkflowState) bool {
 	for _, claimCode := range state.ClaimCodes {
 		if claimCode.Code == code {
 			return true

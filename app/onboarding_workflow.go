@@ -2,8 +2,8 @@ package app
 
 import (
 	"fmt"
-	"temporal-saas-customer-onboarding/messages"
-	"temporal-saas-customer-onboarding/types"
+	"temporal-saas-customer-lifecycle/messages"
+	"temporal-saas-customer-lifecycle/types"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,17 +12,17 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-var onboardingStatusKey = temporal.NewSearchAttributeKeyKeyword("OnboardingStatus")
+var lifecycleStatusKey = temporal.NewSearchAttributeKeyKeyword("LifecycleStatus")
 
-// OnboardingWorkflow orchestrates the onboarding process for a new customer.
-func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
+// LifecycleWorkflow orchestrates the lifecycle process for a new customer.
+func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
 
 	// Log the start of the workflow
-	logger.Info("Onboarding workflow started", "account_name", input.AccountName, "emails", input.Emails)
+	logger.Info("Lifecycle workflow started", "account_name", input.AccountName, "emails", input.Emails)
 
 	// Set initial search attribute for the workflow
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("STARTED"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("STARTED"))
 
 	// Define retry policy for activities
 	retrypolicy := &temporal.RetryPolicy{
@@ -56,7 +56,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}()
 
 	// Initialize workflow state
-	state := types.OnboardingWorkflowState{
+	state := types.LifecycleWorkflowState{
 		AccountName: input.AccountName,
 		Emails:      input.Emails,
 		Price:       input.Price,
@@ -80,7 +80,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 
 	// Update search attribute to indicate charging phase
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CHARGING"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CHARGING"))
 
 	// Charge customer
 	var chargeResult string
@@ -92,7 +92,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Successfully charged customer", "result", chargeResult)
 
 	// Update search attribute to indicate account creation phase
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CREATING_ACCOUNT"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CREATING_ACCOUNT"))
 
 	// Create account
 	var createAccountResult string
@@ -104,7 +104,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Successfully created account", "result", createAccountResult)
 
 	// Update search attribute to indicate admin user creation phase
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CREATING_ADMIN_USERS"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CREATING_ADMIN_USERS"))
 
 	// Create admin users
 	var createAdminUsersResult string
@@ -122,7 +122,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 
 	// Update search attribute to indicate claim code sending phase
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_CLAIM_CODES"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_CLAIM_CODES"))
 
 	// Send claim codes
 	for _, claimCode := range state.ClaimCodes {
@@ -136,7 +136,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 
 	// Update search attribute to indicate waiting for claim codes
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("WAITING_FOR_CLAIM_CODES"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("WAITING_FOR_CLAIM_CODES"))
 
 	// Await signal message to update address
 	logger.Info(fmt.Sprintf("Waiting up to %d seconds for claim codes", ACCEPTANCE_TIME))
@@ -183,7 +183,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 
 	// If the update wasn't received or was false, fail the workflow
 	if !ok {
-		workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("CODE_NOT_CLAIMED"))
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CODE_NOT_CLAIMED"))
 		return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
 	}
 
@@ -195,7 +195,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 		}
 	}
 
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
 
 	// Send welcome email
 	var sendWelcomeEmailResult string
@@ -213,7 +213,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	logger.Info("Waiting 10 seconds before sending feedback email")
 	workflow.Sleep(ctx, time.Second*10)
 
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
 
 	// Send feedback email
 	var sendFeedbackEmailResult string
@@ -224,7 +224,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 	}
 	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
-	workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("ONBOARDED"))
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("ONBOARDED"))
 
 	if input.Scenario == SCENARIO_CHILD_WORKFLOW {
 		// Start the subscription child workflow
@@ -253,7 +253,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 				// Break the loop when the signal is received
 				logger.Info("Received cancel subscription signal")
 				subscriptionCanceled = true
-				workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
+				workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
 			})
 			selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
 				// Timer expired, continue the loop
@@ -274,7 +274,7 @@ func OnboardingWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInpu
 			}
 
 			numRenews++
-			workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet(fmt.Sprintf("RENEWED_%d", numRenews)))
+			workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(fmt.Sprintf("RENEWED_%d", numRenews)))
 			logger.Info("Successfully charged customer", "result", chargeResult)
 		}
 	}

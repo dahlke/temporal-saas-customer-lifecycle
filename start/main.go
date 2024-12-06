@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"temporal-saas-customer-onboarding/app"
-	"temporal-saas-customer-onboarding/types"
+	"temporal-saas-customer-lifecycle/app"
+	"temporal-saas-customer-lifecycle/types"
 
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/client"
@@ -20,7 +20,7 @@ func main() {
 	defer c.Close()
 
 	options := client.StartWorkflowOptions{
-		ID:        "onboarding-workflow-" + uuid.New().String(),
+		ID:        "lifecycle-workflow-" + uuid.New().String(),
 		TaskQueue: app.ONBOARDING_TASK_QUEUE,
 	}
 
@@ -28,7 +28,7 @@ func main() {
 	accountName := "Temporal"
 	emails := []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
 	price := 10.0
-	input := types.OnboardingWorkflowInput{
+	input := types.LifecycleWorkflowInput{
 		AccountName: accountName,
 		Emails:      emails,
 		Price:       price,
@@ -38,7 +38,7 @@ func main() {
 	wf, err := c.ExecuteWorkflow(
 		context.Background(),
 		options,
-		app.OnboardingWorkflow,
+		app.LifecycleWorkflow,
 		input,
 	)
 

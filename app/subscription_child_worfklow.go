@@ -2,15 +2,15 @@ package app
 
 import (
 	"fmt"
-	"temporal-saas-customer-onboarding/messages"
-	"temporal-saas-customer-onboarding/types"
+	"temporal-saas-customer-lifecycle/messages"
+	"temporal-saas-customer-lifecycle/types"
 	"time"
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
-func SubscriptionChildWorkflow(ctx workflow.Context, input types.OnboardingWorkflowInput) (string, error) {
+func SubscriptionChildWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Subscription child workflow started", "accountName", input.AccountName)
 
@@ -37,7 +37,7 @@ func SubscriptionChildWorkflow(ctx workflow.Context, input types.OnboardingWorkf
 			// Break the loop when the signal is received
 			logger.Info("Received cancel subscription signal")
 			subscriptionCanceled = true
-			workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
+			workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
 		})
 		selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
 			// Timer expired, continue the loop
@@ -58,7 +58,7 @@ func SubscriptionChildWorkflow(ctx workflow.Context, input types.OnboardingWorkf
 		}
 
 		numRenews++
-		workflow.UpsertTypedSearchAttributes(ctx, onboardingStatusKey.ValueSet(fmt.Sprintf("RENEWED_%d", numRenews)))
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(fmt.Sprintf("RENEWED_%d", numRenews)))
 		logger.Info("Successfully charged customer", "result", chargeResult)
 	}
 

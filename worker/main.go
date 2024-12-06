@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"temporal-saas-customer-onboarding/app"
+	"temporal-saas-customer-lifecycle/app"
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -18,7 +18,7 @@ func main() {
 
 	// This worker hosts both Workflow and Activity functions
 	w := worker.New(c, app.ONBOARDING_TASK_QUEUE, worker.Options{})
-	w.RegisterWorkflow(app.OnboardingWorkflow)
+	w.RegisterWorkflow(app.LifecycleWorkflow)
 	w.RegisterWorkflow(app.SubscriptionChildWorkflow)
 	w.RegisterActivity(app.ChargeCustomer)
 	w.RegisterActivity(app.CreateAccount)
