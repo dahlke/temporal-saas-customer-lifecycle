@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "temporal_saas_customer_lifecycle"
+version = "0.1.0"
+description = ""
+authors = ["Neil Dahlke <neil.dahlke@temporal.io>"]
+readme = "README.md"
+packages = [
+    { include = "**/*.py", from = "."  }
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+temporalio = "^1.6.0"
+cramjam = "^2.8.3"
+docopt = "^0.6.2"
+aiohttp = "^3.8.1"
+cryptography = "^36.0.0"
+flask = {extras = ["async"], version = "^3.0.3"}
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"  # Explicitly sets asyncio mode to strict
+asyncio_default_fixture_loop_scope = "function"  # To address the PytestDeprecationWarning
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

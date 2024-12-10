@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Customer Lifecycle Workflow Status</h2>
+
+<table class="table">
+    <tr>
+        <th scope="row">Workflow ID</th>
+        <td><a href="{{temporal_ui_url}}/namespaces/{{temporal_namespace}}/workflows/{{wf_id}}" target="_blank">{{ wf_id }}</a></td>
+    </tr>
+    <tr>
+        <th scope="row">Status</th>
+        <td>{{ tf_run_status }}</td>
+    </tr>
+</table>
+
+{% if tf_workflow_output != {} %}
+	<h4>Terraform Output</h4>
+	<table class="table table-sm table-dark">
+		<tr>
+			<th>Key</th>
+			<th>Value</th>
+		</tr>
+		{% for key, value in tf_workflow_output.items() %}
+		<tr>
+			<td><code>{{ key }}</code></td>
+			<td><code>{{ value["value"] }}</code></td>
+		</tr>
+		{% endfor %}
+	</table>
+{% endif %}
+
+
+<button class="btn btn-primary" onclick="reloadMainPage()">Choose Another Scenario</button>
+
+<hr />
+
+<h4>Historical Runs</h4>
+
+<table class="table table-sm table-striped">
+    <tr>
+        <th>Workflow ID</th>
+        <th>Scenario</th>
+        <th>Status</th>
+    </tr>
+    {% for run in tf_runs %}
+    <tr>
+        <td><a href="{{temporal_ui_url}}/namespaces/{{temporal_namespace}}/workflows/{{run['id']}}" target="_blank">{{ run["id"] }}</a></td>
+        <td>{{ run["scenario"] }}</td>
+        <td>{{ run["status"] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

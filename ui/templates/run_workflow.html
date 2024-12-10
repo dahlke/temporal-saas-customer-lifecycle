@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<script>
+	// Start updating progress when the page loads
+	document.addEventListener("DOMContentLoaded", function () {
+		updateProgress();
+	});
+</script>
+
+<h2>Customer Lifecycle Workflow Status</h2>
+
+<table class="table">
+    <tr>
+        <th scope="row">Selected Scenario</th>
+        <td>{{ selected_scenario }}</td>
+    </tr>
+    <tr>
+        <th scope="row">Workflow ID</th>
+        <td><a href="{{temporal_ui_url}}/namespaces/{{temporal_namespace}}/workflows/{{wf_id}}" target="_blank">{{ wf_id }}</a></td>
+    </tr>
+</table>
+
+<h4>Customer Lifecycle</h4>
+<!--
+Don't show thw current status on the happy path because we want to illustrate
+why you want advanced visbility, but we also want that visibility on all the
+other scenarios because it is helpful to have.
+ -->
+<h5>Current Status: <span id="currentStatus" class="badge text-bg-secondary">...</span></h5>
+
+<div class="status-bar">
+	<div id="progressBar" class="status-progress" style="width: 0;"></div>
+</div>
+
+
+<div id="signalContainer">
+	<h5>Resend Claim Codes w/ Signal?</h5>
+	<button class="btn btn-primary" onclick="signal('signalResendClaimCodes', true)">Resend Claim Codes</button>
+</div>
+
+<div id="updateContainer">
+	<h5>Claim Code w/ Update?</h5>
+	<label for="reason">Claim Code:</label>
+	<input type="text" id="reason" placeholder="Enter your claim code... "/>
+	<button class="btn btn-primary" onclick="update('updateClaimCodes', true)">Claim Code</button>
+</div>
+
+<div id="updateResult" class="badge text-bg-danger"></div>
+<p id="errorMessage" class="badge text-bg-danger"></p>
+
+<hr />
+
+{% endblock %}
