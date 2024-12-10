@@ -8,12 +8,12 @@ function generateUUID() {
 
 function runWorkflow() {
 	var selectedScenario = document.getElementById("scenario").value;
-	var tfRunID = `customer-lifecycle-${generateUUID()}`;
+	var wfID = `customer-lifecycle-${generateUUID()}`;
 
 	// Redirect to run_workflow page with the selected scenario as a query parameter
 	window.location.href =
 		"/run_workflow?scenario=" + encodeURIComponent(selectedScenario) +
-		"&wfID=" + encodeURIComponent(tfRunID)
+		"&wfID=" + encodeURIComponent(wfID)
 }
 
 // TODO: clean up all of this code.
@@ -21,9 +21,9 @@ function runWorkflow() {
 function updateProgress() {
 	var urlParams = new URLSearchParams(window.location.search);
 	var scenario = urlParams.get("scenario");
-	var tfRunID = urlParams.get("wfID");
+	var wfID = urlParams.get("wfID");
 
-	fetch("/get_progress?wfID=" + encodeURIComponent(tfRunID))
+	fetch("/get_progress?wfID=" + encodeURIComponent(wfID))
 		.then(response => {
 			if (response.ok) {
 				return response.json();
@@ -49,9 +49,9 @@ function updateProgress() {
 			}
 
 			if (data.progress_percent === 100) {
-				// Redirect to order confirmation with the tfRunID
+				// Redirect to order confirmation with the wfID
 				window.location.href =
-					"/end_workflow?wfID=" + encodeURIComponent(tfRunID) +
+					"/end_workflow?wfID=" + encodeURIComponent(wfID) +
 					"&scenario=" + encodeURIComponent(scenario);
 			} else {
 				// Continue updating progress every second
@@ -71,12 +71,12 @@ function updateProgress() {
 }
 
 function signal(signalType, payload) {
-	// Get the tfRunID from the URL query parameters
+	// Get the wfID from the URL query parameters
 	var urlParams = new URLSearchParams(window.location.search);
-	var tfRunID = urlParams.get("wfID");
+	var wfID = urlParams.get("wfID");
 
 	// Perform AJAX request to the server for signaling
-	fetch("/signal?wfID=" + encodeURIComponent(tfRunID), {
+	fetch("/signal?wfID=" + encodeURIComponent(wfID), {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json"
@@ -108,24 +108,23 @@ function signal(signalType, payload) {
 		});
 }
 
-function update(updateType, decision) {
-	// Get the tfRunID from the URL query parameters
+function update() {
+	// Get the wfID from the URL query parameters
 	var urlParams = new URLSearchParams(window.location.search);
-	var tfRunID = urlParams.get("wfID");
-	var reason = document.getElementById("reason").value;
+	var wfID = urlParams.get("wfID");
+	var code = document.getElementById("claimCode").value;
 	var updateResultEl = document.getElementById("updateResult");
 	updateResultEl.style.display = "none";
 
 
 	// Perform AJAX request to the server for updating
-	fetch("/update?wfID=" + encodeURIComponent(tfRunID), {
+	fetch("/update?wfID=" + encodeURIComponent(wfID), {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json"
 		},
 		body: JSON.stringify({
-			decision: decision,
-			reason: reason
+			"claim_code": code
 		})
 	})
 	.then(response => {

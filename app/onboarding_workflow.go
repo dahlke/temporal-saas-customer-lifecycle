@@ -212,6 +212,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 
 	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
 	state.Progress = 70
+	state.Status = "SENDING_WELCOME_EMAIL"
 
 	// Send welcome email
 	var sendWelcomeEmailResult string
@@ -231,6 +232,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 
 	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
 	state.Progress = 80
+	state.Status = "SENDING_FEEDBACK_EMAIL"
 
 	// Send feedback email
 	var sendFeedbackEmailResult string
@@ -243,6 +245,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 
 	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("ONBOARDED"))
 	state.Progress = 90
+	state.Status = "ONBOARDED"
 
 	if input.Scenario == SCENARIO_CHILD_WORKFLOW {
 		// Start the subscription child workflow

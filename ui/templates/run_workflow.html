@@ -37,14 +37,16 @@ other scenarios because it is helpful to have.
 
 <div id="signalContainer">
 	<h5>Resend Claim Codes w/ Signal?</h5>
-	<button class="btn btn-primary" onclick="signal('signalResendClaimCodes', true)">Resend Claim Codes</button>
+	<button class="btn btn-primary" onclick="signal('ResendClaimCodesSignal', true)">Resend Claim Codes</button>
+	<h5>Cancel Subscription w/ Signal?</h5>
+	<button class="btn btn-primary" onclick="signal('CancelSubscriptionSignal', true)">Cancel Subscription</button>
 </div>
 
 <div id="updateContainer">
 	<h5>Claim Code w/ Update?</h5>
 	<label for="reason">Claim Code:</label>
-	<input type="text" id="reason" placeholder="Enter your claim code... "/>
-	<button class="btn btn-primary" onclick="update('updateClaimCodes', true)">Claim Code</button>
+	<input type="text" id="claimCode" placeholder="Enter your claim code... "/>
+	<button class="btn btn-primary" onclick="update()">Claim Code</button>
 </div>
 
 <div id="updateResult" class="badge text-bg-danger"></div>

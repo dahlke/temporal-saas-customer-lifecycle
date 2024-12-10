@@ -181,16 +181,16 @@ async def signal():
 	wf_id = request.args.get("wfID", "")
 	signal_type = request.json.get("signalType", "")
 	# TODO: get the email from the UI
-	payload = request.json.get("payload", False)
 
 	try:
 		client = await _get_singleton_temporal_client()
 		wf_handle = client.get_workflow_handle(wf_id)
 
-		if signal_type == "signalResendClaimCodes":
-			# TODO
-			resend_email = { "email": "TODO", }
-			await wf_handle.signal(signal_type, resend_email)
+		resend_email = { "email": "TODO", }
+		if signal_type == "ResendClaimCodesSignal":
+			await wf_handle.signal(signal_type)
+		elif signal_type == "CancelSubscriptionSignal":
+			await wf_handle.signal(signal_type)
 		else:
 			raise Exception("Signal type not supported")
 
@@ -204,18 +204,16 @@ async def signal():
 @app.route('/update', methods=["POST"])
 async def update():
 	wf_id = request.args.get("wfID", "")
-	code = request.json.get("code", "")
+	claim_code = request.json.get("claim_code", "")
 
 	try:
 		client = await _get_singleton_temporal_client()
 		wf_handle = client.get_workflow_handle(wf_id)
-		print(wf_handle)
 
-		apply_decision = AcceptClaimCodeInput(
-			claim_code=code,
+		claim_code_input = AcceptClaimCodeInput(
+			claim_code=claim_code,
 		)
-		print(apply_decision)
-		result = await wf_handle.execute_update("update_apply_decision", apply_decision)
+		result = await wf_handle.execute_update("AcceptClaimCodeUpdate", claim_code_input)
 
 		return jsonify({"result": result}), 200
 	except Exception as e:
