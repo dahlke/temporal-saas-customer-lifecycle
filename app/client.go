@@ -32,7 +32,7 @@ func GetClientOptions() client.Options {
 		Logger:    tlog.NewStructuredLogger(logger),
 	}
 
-	apiKey := GetEnv("TEMPORAL_APIKEY", "")
+	apiKey := GetEnv("TEMPORAL_API_KEY", "")
 	tlsCertPath := GetEnv("TEMPORAL_CERT_PATH", "")
 	tlsKeyPath := GetEnv("TEMPORAL_KEY_PATH", "")
 
@@ -118,7 +118,7 @@ func GetClientOptions() client.Options {
 	if encryptPayloads == "true" {
 		clientOptions.DataConverter = encryption.NewEncryptionDataConverter(
 			converter.GetDefaultDataConverter(),
-			encryption.DataConverterOptions{KeyID: "test", Compress: false},
+			encryption.DataConverterOptions{KeyID: "sa-rocks!sa-rocks!sa-rocks!yeah!", Compress: false},
 		)
 	}
 

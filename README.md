@@ -13,7 +13,8 @@ This demo shows how to implement a naive customer lifecycle workflow using Tempo
 |                    |    | __ | Retry          | ✅ | __ |                     |    |
 |                    |    | __ | Data Converter | ✅ | __ |                     |    |
 |                    |    | __ | Child Workflow | ✅ | __ |                     |    |
-|                    |    | __ | Polyglot       |    | __ |                     |    |
+|                    |    | __ | Polyglot       | ✅ | __ |                     |    |
+|                    |    | __ | Replay Tests   |    | __ |                     |    |
 |                    |    | __ | API Keys       |    | __ |                     |    |
 
 ## Lifecycle Workflow
@@ -85,7 +86,7 @@ export TEMPORAL_ADDRESS="<namespace>.<accountId>.tmprl.cloud:7233"
 export TEMPORAL_CERT_PATH="/path/to/ca.pem"
 export TEMPORAL_KEY_PATH="/path/to/ca.key"
 export TEMPORAL_NAMESPACE="<namespace>"
-export TEMPORAL_ONBOARDING_TASK_QUEUE="lifecycle"
+export TEMPORAL_LIFECYCLE_TASK_QUEUE="lifecycle"
 ```
 
 If you are using Temporal Cloud, the command will look a bit different, using `tcld namespace search-attributes-add`.

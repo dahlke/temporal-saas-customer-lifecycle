@@ -15,6 +15,8 @@ type LifecycleWorkflowState struct {
 	Price       float64           `json:"price"`
 	Emails      []string          `json:"emails"`
 	ClaimCodes  []ClaimCodeStatus `json:"claim_codes"`
+	Progress    int               `json:"progress"`
+	Status      string            `json:"status"`
 }
 
 type LifecycleWorkflowInput struct {

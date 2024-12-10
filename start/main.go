@@ -21,7 +21,7 @@ func main() {
 
 	options := client.StartWorkflowOptions{
 		ID:        "lifecycle-workflow-" + uuid.New().String(),
-		TaskQueue: app.ONBOARDING_TASK_QUEUE,
+		TaskQueue: app.LIFECYCLE_TASK_QUEUE,
 	}
 
 	// Start the Workflow
