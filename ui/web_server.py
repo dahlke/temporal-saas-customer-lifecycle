@@ -74,7 +74,6 @@ async def run_workflow():
 
 	# Create Workflow input
 	wf_input = LifecycleWorkflowInput(
-		# TODO: take this from the UI
 		account_name="Temporal",
 		emails=["sa@temporal.io", "solutions@temporal.io"],
 		price=10.0,
@@ -200,9 +199,7 @@ async def update():
 
 		return jsonify({"result": result}), 200
 	except Exception as e:
-		# TODO: change the errors here
 		print(f"Error sending update: {str(e)}")
-		# return jsonify({"error": ""}), 500
 		return jsonify({"result": "Error sending update. Make sure your code is not empty."}), 422
 
 # Run the Flask app

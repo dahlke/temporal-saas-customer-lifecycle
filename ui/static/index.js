@@ -161,12 +161,6 @@ function update() {
 	});
 }
 
-function handleScenarioChange(event) {
-	var scenario = event.target.value;
-	console.log(scenario);
-	// TODO
-}
-
 function reloadMainPage() {
 	// Redirect to the main page
 	window.location.href = "/";
