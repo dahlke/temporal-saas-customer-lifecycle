@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass, field
 from typing import Dict
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from shared.base import get_temporal_client, LifecycleWorkflowInput, AcceptClaimCodeInput, \
 	TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE, TEMPORAL_TASK_QUEUE, ENCRYPT_PAYLOADS
 
@@ -14,7 +14,6 @@ app = Flask(__name__)
 lifecycle_status_key = SearchAttributeKey.for_text("LifecycleStatus")
 temporal_ui_url = TEMPORAL_ADDRESS.replace("7233", "8233") if "localhost" in TEMPORAL_ADDRESS \
 	else "https://cloud.temporal.io"
-wf_executions = []
 
 # Define the available scenarios
 SCENARIOS = {
@@ -40,11 +39,6 @@ SCENARIOS = {
 	},
 }
 
-def _safe_insert_wf_execution(wf_execution: dict):
-	global wf_executions
-	# Always insert the run as the first item in the list
-	wf_executions.insert(0, wf_execution) if wf_execution["id"] not in [run["id"] for run in wf_executions] else None
-
 # Global variable to store the Temporal client
 temporal_client = None
 
@@ -63,7 +57,6 @@ async def main():
 	return render_template(
 		"index.html",
 		wf_id=wf_id,
-		wf_executions=wf_executions,
 		scenarios=SCENARIOS,
 		temporal_host_url=TEMPORAL_ADDRESS,
 		temporal_ui_url=temporal_ui_url,
@@ -114,7 +107,6 @@ async def run_workflow():
 	return render_template(
 		"run_workflow.html",
 		wf_id=wf_id,
-		wf_executions=wf_executions,
 		selected_scenario=selected_scenario,
 		temporal_host_url=TEMPORAL_ADDRESS,
 		temporal_ui_url=temporal_ui_url,
@@ -126,19 +118,22 @@ async def run_workflow():
 @app.route('/get_progress')
 async def get_progress():
 	wf_id = request.args.get('wfID', "")
+	scenario = request.args.get('scenario', "")
 
 	payload = {}
 
 	try:
 		client = await _get_singleton_temporal_client()
 		wf_handle = client.get_workflow_handle(wf_id)
-		payload = await wf_handle.query("GetState")
-		workflow_desc = await wf_handle.describe()
 
+		workflow_desc = await wf_handle.describe()
+		payload = await wf_handle.query("GetState")
+
+		print(workflow_desc.status)
 		if workflow_desc.status == 3:
 			error_message = "Workflow failed: {wf_id}"
 			print(f"Error in get_progress route: {error_message}")
-			return jsonify({"error": error_message}), 500
+			return redirect(url_for('end_workflow', wfID=wf_id, scenario=scenario))
 
 		return jsonify(payload)
 	except Exception as e:
@@ -153,21 +148,11 @@ async def end_workflow():
 
 	client = await _get_singleton_temporal_client()
 	wf_handle = client.get_workflow_handle(wf_id)
-	state = await wf_handle.query("GetState")
-	status = state["status"]
-	wf_output = await wf_handle.result()
-
-	_safe_insert_wf_execution({
-		"id": wf_id,
-		"scenario": scenario,
-		"status": status,
-	})
+	status = await wf_handle.result()
 
 	return render_template(
 		"end_workflow.html",
 		wf_id=wf_id,
-		wf_executions=wf_executions,
-		wf_output=wf_output,
 		status=status,
 		temporal_host_url=TEMPORAL_ADDRESS,
 		temporal_ui_url=temporal_ui_url,

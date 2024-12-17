@@ -30,12 +30,12 @@ function updateCodesContainer(data) {
 
 
 function runWorkflow() {
-	var selectedScenario = document.getElementById("scenario").value;
+	var scenario = document.getElementById("scenario").value;
 	var wfID = `customer-lifecycle-${generateUUID()}`;
 
 	// Redirect to run_workflow page with the selected scenario as a query parameter
 	window.location.href =
-		"/run_workflow?scenario=" + encodeURIComponent(selectedScenario) +
+		"/run_workflow?scenario=" + encodeURIComponent(scenario) +
 		"&wfID=" + encodeURIComponent(wfID)
 }
 
@@ -46,19 +46,7 @@ function updateProgress() {
 	var scenario = urlParams.get("scenario");
 	var wfID = urlParams.get("wfID");
 
-	let timerExpired = false;
-
-	// Set a timer for 2 minutes (120,000 milliseconds)
-	const timer = setTimeout(() => {
-		timerExpired = true;
-		if (!data.status.includes("RENEW")) {
-			window.location.href =
-				"/end_workflow?wfID=" + encodeURIComponent(wfID) +
-				"&scenario=" + encodeURIComponent(scenario);
-		}
-	}, 120000);
-
-	fetch("/get_progress?wfID=" + encodeURIComponent(wfID))
+	fetch("/get_progress?scenario=" + encodeURIComponent(scenario) + "&wfID=" + encodeURIComponent(wfID))
 		.then(response => {
 			if (response.ok) {
 				return response.json();
@@ -82,17 +70,14 @@ function updateProgress() {
 
 				updateCodesContainer(data.claim_codes);
 			} else if (data.status.includes("RENEWED")) {
-				clearTimeout(timer); // Clear the timer if status includes "RENEWED"
 				document.getElementById("cancelSignalContainer").style.display = "block";
-			}
-
-			if (data.status.includes("CANCELED")) {
+			} else if (data.status.includes("CODE_NOT_CLAIMED")) {
 				window.location.href =
 					"/end_workflow?wfID=" + encodeURIComponent(wfID) +
 					"&scenario=" + encodeURIComponent(scenario);
-			} else if (!timerExpired) {
-				setTimeout(updateProgress, 1000);
 			}
+
+			setTimeout(updateProgress, 1000);
 		})
 		.catch(error => {
 			console.error("Error fetching progress:", error.message);
@@ -105,6 +90,7 @@ function signal(signalType, payload) {
 	// Get the wfID from the URL query parameters
 	var urlParams = new URLSearchParams(window.location.search);
 	var wfID = urlParams.get("wfID");
+	var scenario = urlParams.get("scenario");
 
 	// Perform AJAX request to the server for signaling
 	fetch("/signal?wfID=" + encodeURIComponent(wfID), {
@@ -120,6 +106,11 @@ function signal(signalType, payload) {
 	.then(response => {
 		if (response.ok) {
 			console.log("Signal sent successfully");
+			if (signalType === "CancelSubscriptionSignal") {
+				window.location.href =
+					"/end_workflow?wfID=" + encodeURIComponent(wfID) +
+					"&scenario=" + encodeURIComponent(scenario);
+			}
 		} else {
 				console.error("Failed to send signal");
 
@@ -163,7 +154,6 @@ function update() {
 			document.getElementById("updateContainer").style.display = "none";
 			document.getElementById("codesContainer").style.display = "none";
 			document.getElementById("resendSignalContainer").style.display = "none";
-			document.getElementById("cancelSignalContainer").style.display = "block";
 		}
 	})
 	.catch(error => {

@@ -208,115 +208,118 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	// If the update wasn't received or was false, fail the workflow
 	if !ok {
 		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CODE_NOT_CLAIMED"))
-		return "", fmt.Errorf("claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
+		state.Status = "CODE_NOT_CLAIMED"
+		logger.Info("Claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
 	}
 
-	// Update the claim status in the workflow state
-	for i := range state.ClaimCodes {
-		if state.ClaimCodes[i].Code == acceptedCode {
-			state.ClaimCodes[i].IsClaimed = true
-			break
-		}
-	}
-
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
-	state.Progress = 70
-	state.Status = "SENDING_WELCOME_EMAIL"
-
-	// Send welcome email
-	var sendWelcomeEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input).Get(ctx, &sendWelcomeEmailResult)
-	if err != nil {
-		logger.Error("Failed to send welcome email", "error", err)
-		return "", err
-	}
-	logger.Info("Successfully sent welcome email", "result", sendWelcomeEmailResult)
-
-	// Clear saga compensations as the group is onboarded
-	saga.ClearCompensations()
-
-	// Wait before sending feedback email
-	logger.Info("Waiting 10 seconds before sending feedback email")
-	workflow.Sleep(ctx, time.Second*10)
-
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
-	state.Progress = 80
-	state.Status = "SENDING_FEEDBACK_EMAIL"
-
-	// Send feedback email
-	var sendFeedbackEmailResult string
-	err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input).Get(ctx, &sendFeedbackEmailResult)
-	if err != nil {
-		logger.Error("Failed to send feedback email", "error", err)
-		return "", err
-	}
-	logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
-
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("ONBOARDED"))
-	state.Progress = 90
-	state.Status = "ONBOARDED"
-
-	if input.Scenario == SCENARIO_CHILD_WORKFLOW {
-		// Start the subscription child workflow
-		ChildWorkflowOptions := workflow.ChildWorkflowOptions{
-			WorkflowID:        fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String()),
-			ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-		}
-		ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
-		err := workflow.ExecuteChildWorkflow(ctx, SubscriptionChildWorkflow, input).Get(ctx, nil)
-		if err != nil {
-			logger.Error("Failed to start subscription child workflow", "error", err)
-			return "", err
-		}
-		logger.Info("Started Child Workflow: " + ChildWorkflowOptions.WorkflowID)
-	} else {
-		// Create a channel to receive the cancel subscription signal
-		cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)
-
-		subscriptionCanceled := false
-		numRenews := 0
-		for {
-			logger.Info("Waiting for 10 seconds to charge the customer or until a cancel subscription signal is received")
-			// Wait for 10 seconds or until a cancel subscription signal is received
-			selector := workflow.NewSelector(ctx)
-			selector.AddReceive(cancelSubscriptionSignalChan, func(c workflow.ReceiveChannel, more bool) {
-				// Break the loop when the signal is received
-				logger.Info("Received cancel subscription signal")
-				subscriptionCanceled = true
-				workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
-				state.Status = "SUBSCRIPTION_CANCELED"
-			})
-			selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
-				// Timer expired, continue the loop
-			})
-			selector.Select(ctx)
-
-			// Check if the subscription was canceled
-			if subscriptionCanceled {
+	if state.Status != "CODE_NOT_CLAIMED" {
+		// Update the claim status in the workflow state
+		for i := range state.ClaimCodes {
+			if state.ClaimCodes[i].Code == acceptedCode {
+				state.ClaimCodes[i].IsClaimed = true
 				break
 			}
+		}
 
-			// Execute the charge activity
-			var chargeResult string
-			err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
+		state.Progress = 70
+		state.Status = "SENDING_WELCOME_EMAIL"
+
+		// Send welcome email
+		var sendWelcomeEmailResult string
+		err = workflow.ExecuteActivity(ctx, SendWelcomeEmail, input).Get(ctx, &sendWelcomeEmailResult)
+		if err != nil {
+			logger.Error("Failed to send welcome email", "error", err)
+			return "", err
+		}
+		logger.Info("Successfully sent welcome email", "result", sendWelcomeEmailResult)
+
+		// Clear saga compensations as the group is onboarded
+		saga.ClearCompensations()
+
+		// Wait before sending feedback email
+		logger.Info("Waiting 1 seconds before sending feedback email")
+		workflow.Sleep(ctx, time.Second*1)
+
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
+		state.Progress = 80
+		state.Status = "SENDING_FEEDBACK_EMAIL"
+
+		// Send feedback email
+		var sendFeedbackEmailResult string
+		err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input).Get(ctx, &sendFeedbackEmailResult)
+		if err != nil {
+			logger.Error("Failed to send feedback email", "error", err)
+			return "", err
+		}
+		logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
+
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("ONBOARDED"))
+		state.Progress = 90
+		state.Status = "ONBOARDED"
+
+		if input.Scenario == SCENARIO_CHILD_WORKFLOW {
+			// Start the subscription child workflow
+			ChildWorkflowOptions := workflow.ChildWorkflowOptions{
+				WorkflowID:        fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String()),
+				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+			}
+			ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
+			err := workflow.ExecuteChildWorkflow(ctx, SubscriptionChildWorkflow, input).Get(ctx, nil)
 			if err != nil {
-				logger.Error("Failed to charge customer", "error", err)
+				logger.Error("Failed to start subscription child workflow", "error", err)
 				return "", err
 			}
+			logger.Info("Started Child Workflow: " + ChildWorkflowOptions.WorkflowID)
+		} else {
+			// Create a channel to receive the cancel subscription signal
+			cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)
 
-			numRenews++
-			renewStatus := fmt.Sprintf("RENEWED_%d", numRenews)
-			workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(renewStatus))
-			state.Status = renewStatus
+			subscriptionCanceled := false
+			numRenews := 0
+			for {
+				logger.Info("Waiting for 3 seconds to charge the customer or until a cancel subscription signal is received")
+				// Wait for 3 seconds or until a cancel subscription signal is received
+				selector := workflow.NewSelector(ctx)
+				selector.AddReceive(cancelSubscriptionSignalChan, func(c workflow.ReceiveChannel, more bool) {
+					// Break the loop when the signal is received
+					logger.Info("Received cancel subscription signal")
+					subscriptionCanceled = true
+					workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
+					state.Status = "SUBSCRIPTION_CANCELED"
+				})
+				selector.AddFuture(workflow.NewTimer(ctx, time.Second*3), func(f workflow.Future) {
+					// Timer expired, continue the loop
+				})
+				selector.Select(ctx)
 
-			logger.Info("Successfully charged customer", "result", chargeResult)
+				// Check if the subscription was canceled
+				if subscriptionCanceled {
+					break
+				}
+
+				// Execute the charge activity
+				var chargeResult string
+				err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
+				if err != nil {
+					logger.Error("Failed to charge customer", "error", err)
+					return "", err
+				}
+
+				logger.Info("Successfully charged customer", "result", chargeResult)
+
+				numRenews++
+				renewStatus := fmt.Sprintf("RENEWED_%d", numRenews)
+				workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(renewStatus))
+				state.Status = renewStatus
+			}
 		}
+
+		// TODO: we could also clean up the admin users and account here
+		// saga.AddCompensation(DeleteAccount, input)
+		// saga.AddCompensation(DeleteAdminUsers, input)
+		state.Progress = 100
 	}
 
-	// TODO: we could also clean up the admin users and account here
-	// saga.AddCompensation(DeleteAccount, input)
-	// saga.AddCompensation(DeleteAdminUsers, input)
-	state.Progress = 100
-
-	return sendFeedbackEmailResult, nil
+	return state.Status, nil
 }
