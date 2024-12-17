@@ -163,6 +163,8 @@ async def signal():
 	wf_id = request.args.get("wfID", "")
 	signal_type = request.json.get("signalType", "")
 
+	# TODO: get the child workflow and send the signal to It
+
 	try:
 		client = await _get_singleton_temporal_client()
 		wf_handle = client.get_workflow_handle(wf_id)

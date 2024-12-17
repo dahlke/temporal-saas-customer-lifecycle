@@ -260,8 +260,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 
 		if input.Scenario == SCENARIO_CHILD_WORKFLOW {
 			// Start the subscription child workflow
+			state.ChildWorkflowID = fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String())
 			ChildWorkflowOptions := workflow.ChildWorkflowOptions{
-				WorkflowID:        fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String()),
+				WorkflowID:        state.ChildWorkflowID,
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
 			}
 			ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
@@ -285,9 +286,6 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 					// Break the loop when the signal is received
 					logger.Info("Received cancel subscription signal")
 					subscriptionCanceled = true
-					state.Progress = 100
-					state.Status = "SUBSCRIPTION_CANCELED"
-					workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 				})
 				selector.AddFuture(workflow.NewTimer(ctx, time.Second*3), func(f workflow.Future) {
 					// Timer expired, continue the loop
@@ -320,6 +318,8 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 		// saga.AddCompensation(DeleteAccount, input)
 		// saga.AddCompensation(DeleteAdminUsers, input)
 		state.Progress = 100
+		state.Status = "SUBSCRIPTION_CANCELED"
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 	}
 
 	return state.Status, nil

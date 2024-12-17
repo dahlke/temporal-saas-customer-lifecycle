@@ -62,5 +62,8 @@ func SubscriptionChildWorkflow(ctx workflow.Context, input types.LifecycleWorkfl
 		logger.Info("Successfully charged customer", "result", chargeResult)
 	}
 
-	return "", nil
+	status := "SUBSCRIPTION_CANCELED"
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(status))
+
+	return status, nil
 }

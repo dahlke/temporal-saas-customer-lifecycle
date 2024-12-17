@@ -11,12 +11,13 @@ type ClaimCodeStatus struct {
 }
 
 type LifecycleWorkflowState struct {
-	AccountName string            `json:"account_name"`
-	Price       float64           `json:"price"`
-	Emails      []string          `json:"emails"`
-	ClaimCodes  []ClaimCodeStatus `json:"claim_codes"`
-	Progress    int               `json:"progress"`
-	Status      string            `json:"status"`
+	AccountName     string            `json:"account_name"`
+	Price           float64           `json:"price"`
+	Emails          []string          `json:"emails"`
+	ClaimCodes      []ClaimCodeStatus `json:"claim_codes"`
+	Progress        int               `json:"progress"`
+	Status          string            `json:"status"`
+	ChildWorkflowID string            `json:"child_workflow_id"`
 }
 
 type LifecycleWorkflowInput struct {

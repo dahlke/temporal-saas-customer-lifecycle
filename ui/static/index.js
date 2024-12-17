@@ -41,6 +41,8 @@ function runWorkflow() {
 
 // TODO: clean up all of this code.
 
+var childWorkflowID = "";
+
 function updateProgress() {
 	var urlParams = new URLSearchParams(window.location.search);
 	var scenario = urlParams.get("scenario");
@@ -57,6 +59,12 @@ function updateProgress() {
 		.then(data => {
 			document.getElementById("errorMessage").innerText = "";
 			document.getElementById("progressBar").style.width = data.progress + "%";
+
+			console.log(data);
+
+			if (scenario === "CHILD_WORKFLOW" && data.child_workflow_id !== "") {
+				childWorkflowID = data.child_workflow_id;
+			}
 
 			var currentStatusEl = document.getElementById("currentStatus");
 			if (currentStatusEl != null) {
@@ -94,6 +102,9 @@ function signal(signalType, payload) {
 	// Get the wfID from the URL query parameters
 	var urlParams = new URLSearchParams(window.location.search);
 	var wfID = urlParams.get("wfID");
+	if (childWorkflowID !== "") {
+		wfID = childWorkflowID;
+	}
 	var scenario = urlParams.get("scenario");
 
 	// Perform AJAX request to the server for signaling
