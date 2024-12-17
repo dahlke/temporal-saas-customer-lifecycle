@@ -6,6 +6,29 @@ function generateUUID() {
     });
 }
 
+function updateCodesContainer(data) {
+    const tbody = document.getElementById('codesTableBody');
+
+    // Clear existing rows
+    tbody.innerHTML = '';
+
+    // Add a new row for each email and claim code
+    data.forEach(item => {
+        const row = document.createElement('tr');
+
+        const emailCell = document.createElement('td');
+        emailCell.textContent = item.Email;
+        row.appendChild(emailCell);
+
+        const codeCell = document.createElement('td');
+        codeCell.textContent = item.Code;
+        row.appendChild(codeCell);
+
+        tbody.appendChild(row);
+    });
+}
+
+
 function runWorkflow() {
 	var selectedScenario = document.getElementById("scenario").value;
 	var wfID = `customer-lifecycle-${generateUUID()}`;
@@ -23,17 +46,27 @@ function updateProgress() {
 	var scenario = urlParams.get("scenario");
 	var wfID = urlParams.get("wfID");
 
+	let timerExpired = false;
+
+	// Set a timer for 2 minutes (120,000 milliseconds)
+	const timer = setTimeout(() => {
+		timerExpired = true;
+		if (!data.status.includes("RENEW")) {
+			window.location.href =
+				"/end_workflow?wfID=" + encodeURIComponent(wfID) +
+				"&scenario=" + encodeURIComponent(scenario);
+		}
+	}, 120000);
+
 	fetch("/get_progress?wfID=" + encodeURIComponent(wfID))
 		.then(response => {
 			if (response.ok) {
 				return response.json();
 			} else {
-				// If response status is not okay, throw an error
 				throw new Error(`Failed to fetch progress. Status: ${response.status}`);
 			}
 		})
 		.then(data => {
-			// Update the progress bar
 			document.getElementById("errorMessage").innerText = "";
 			document.getElementById("progressBar").style.width = data.progress + "%";
 
@@ -42,30 +75,28 @@ function updateProgress() {
 				currentStatusEl.innerText = data.status;
 			}
 
-			console.log(data);
 			if (data.status === "WAITING_FOR_CLAIM_CODES") {
-				document.getElementById("signalContainer").style.display = "block";
+				document.getElementById("resendSignalContainer").style.display = "block";
 				document.getElementById("updateContainer").style.display = "block";
+				document.getElementById("codesContainer").style.display = "block";
+
+				updateCodesContainer(data.claim_codes);
+			} else if (data.status.includes("RENEWED")) {
+				clearTimeout(timer); // Clear the timer if status includes "RENEWED"
+				document.getElementById("cancelSignalContainer").style.display = "block";
 			}
 
-			if (data.progress_percent === 100) {
-				// Redirect to order confirmation with the wfID
+			if (data.status.includes("CANCELED")) {
 				window.location.href =
 					"/end_workflow?wfID=" + encodeURIComponent(wfID) +
 					"&scenario=" + encodeURIComponent(scenario);
-			} else {
-				// Continue updating progress every second
+			} else if (!timerExpired) {
 				setTimeout(updateProgress, 1000);
 			}
 		})
 		.catch(error => {
-			// Log the detailed error message to the console
 			console.error("Error fetching progress:", error.message);
-
-			// Display the error message in the web browser
 			document.getElementById("errorMessage").innerText = error.message;
-
-			// Handle the error by showing a red status bar
 			document.getElementById("progressBar").style.backgroundColor = "red";
 		});
 }
@@ -86,14 +117,10 @@ function signal(signalType, payload) {
 			payload: payload
 		})
 	})
-		.then(response => {
-			if (response.ok) {
-				console.log("Signal sent successfully");
-				if (signalType == "request_continue_as_new") {
-					document.getElementById("signalContainer").style.display = "none";
-					document.getElementById("updateContainer").style.display = "none";
-				}
-			} else {
+	.then(response => {
+		if (response.ok) {
+			console.log("Signal sent successfully");
+		} else {
 				console.error("Failed to send signal");
 
 				// Get the signalResult element
@@ -131,7 +158,12 @@ function update() {
 		if (response.status !== 200) {
 			console.error("Failed to send update");
 			updateResultEl.style.display = "block";
-			updateResultEl.innerText = "Update sent failed, enter a reason and try again."
+			updateResultEl.innerText = "Update sent failed, enter a correct claim code and try again."
+		} else {
+			document.getElementById("updateContainer").style.display = "none";
+			document.getElementById("codesContainer").style.display = "none";
+			document.getElementById("resendSignalContainer").style.display = "none";
+			document.getElementById("cancelSignalContainer").style.display = "block";
 		}
 	})
 	.catch(error => {

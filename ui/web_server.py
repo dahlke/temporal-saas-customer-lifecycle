@@ -133,7 +133,6 @@ async def get_progress():
 		client = await _get_singleton_temporal_client()
 		wf_handle = client.get_workflow_handle(wf_id)
 		payload = await wf_handle.query("GetState")
-		print(payload)
 		workflow_desc = await wf_handle.describe()
 
 		if workflow_desc.status == 3:
@@ -154,7 +153,8 @@ async def end_workflow():
 
 	client = await _get_singleton_temporal_client()
 	wf_handle = client.get_workflow_handle(wf_id)
-	status = await wf_handle.query("get_current_status")
+	state = await wf_handle.query("GetState")
+	status = state["status"]
 	wf_output = await wf_handle.result()
 
 	_safe_insert_wf_execution({
@@ -168,7 +168,7 @@ async def end_workflow():
 		wf_id=wf_id,
 		wf_executions=wf_executions,
 		wf_output=wf_output,
-		tf_run_status=status,
+		status=status,
 		temporal_host_url=TEMPORAL_ADDRESS,
 		temporal_ui_url=temporal_ui_url,
 		temporal_namespace=TEMPORAL_NAMESPACE,

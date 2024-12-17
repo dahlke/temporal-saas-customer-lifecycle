@@ -118,7 +118,9 @@ button {
 	width: 100%;
 }
 
-#signalContainer,
+#resendSignalContainer,
+#cancelSignalContainer,
+#codesContainer,
 #updateContainer {
 	display: none;
 }

@@ -11,32 +11,17 @@
     </tr>
     <tr>
         <th scope="row">Status</th>
-        <td>{{ tf_run_status }}</td>
+        <td>{{ status }}</td>
     </tr>
 </table>
-
-{% if tf_workflow_output != {} %}
-	<h4>Terraform Output</h4>
-	<table class="table table-sm table-dark">
-		<tr>
-			<th>Key</th>
-			<th>Value</th>
-		</tr>
-		{% for key, value in tf_workflow_output.items() %}
-		<tr>
-			<td><code>{{ key }}</code></td>
-			<td><code>{{ value["value"] }}</code></td>
-		</tr>
-		{% endfor %}
-	</table>
-{% endif %}
 
 
 <button class="btn btn-primary" onclick="reloadMainPage()">Choose Another Scenario</button>
 
 <hr />
 
-<h4>Historical Runs</h4>
+<h4>Runs</h4>
+<!-- TODO: add historical runs -->
 
 <table class="table table-sm table-striped">
     <tr>

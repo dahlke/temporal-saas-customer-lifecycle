@@ -29,24 +29,48 @@ why you want advanced visbility, but we also want that visibility on all the
 other scenarios because it is helpful to have.
  -->
 <h5>Current Status: <span id="currentStatus" class="badge text-bg-secondary">...</span></h5>
+<h5>Time Left: <span id="timerDisplay" class="badge text-bg-secondary">...</span></h5>
 
 <div class="status-bar">
 	<div id="progressBar" class="status-progress" style="width: 0;"></div>
 </div>
 
-
-<div id="signalContainer">
-	<h5>Resend Claim Codes w/ Signal?</h5>
-	<button class="btn btn-primary" onclick="signal('ResendClaimCodesSignal', true)">Resend Claim Codes</button>
-	<h5>Cancel Subscription w/ Signal?</h5>
-	<button class="btn btn-primary" onclick="signal('CancelSubscriptionSignal', true)">Cancel Subscription</button>
+<div id="codesContainer"class="row align-items-end">
+	<table class="table table-sm table-striped">
+		<thead></thead>
+			<th>Email</th>
+			<th>Claim Code</th>
+		</thead>
+		<tbody id="codesTableBody">
+		</tbody>
+	</table>
 </div>
 
-<div id="updateContainer">
-	<h5>Claim Code w/ Update?</h5>
-	<label for="reason">Claim Code:</label>
-	<input type="text" id="claimCode" placeholder="Enter your claim code... "/>
-	<button class="btn btn-primary" onclick="update()">Claim Code</button>
+<div class="row align-items-end">
+	<div class="col">
+		<div id="resendSignalContainer" class="container text-center">
+			<h5>Resend Claim Codes w/ Signal?</h5>
+				<button class="btn btn-secondary" onclick="signal('ResendClaimCodesSignal', true)">Resend Claim Codes</button>
+			</div>
+		</div>
+		<div class="col">
+			<div id="updateContainer" class="container text-center">
+				<h5>Claim Code w/ Update?</h5>
+				<label for="reason">Claim Code:</label>
+				<input type="text" id="claimCode" placeholder="Enter claim code... "/>
+				<button class="btn btn-primary" onclick="update()">Claim Code</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row align-items-end">
+	<div class="col">
+	<div id="cancelSignalContainer" class="container text-center">
+		<h5>Cancel Subscription w/ Signal?</h5>
+		<button class="btn btn-primary" onclick="signal('CancelSubscriptionSignal', true)">Cancel Subscription</button>
+	</div>
+	</div>
 </div>
 
 <div id="updateResult" class="badge text-bg-danger"></div>
