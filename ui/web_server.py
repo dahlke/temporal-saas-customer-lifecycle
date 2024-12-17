@@ -76,7 +76,7 @@ async def run_workflow():
 	wf_input = LifecycleWorkflowInput(
 		# TODO: take this from the UI
 		account_name="Temporal",
-		emails=["neil@dahlke.io", "neil.dahlke@temporal.io"],
+		emails=["sa@temporal.io", "solutions@temporal.io"],
 		price=10.0,
 		scenario=selected_scenario,
 	)
@@ -165,13 +165,11 @@ async def end_workflow():
 async def signal():
 	wf_id = request.args.get("wfID", "")
 	signal_type = request.json.get("signalType", "")
-	# TODO: get the email from the UI
 
 	try:
 		client = await _get_singleton_temporal_client()
 		wf_handle = client.get_workflow_handle(wf_id)
 
-		resend_email = { "email": "TODO", }
 		if signal_type == "ResendClaimCodesSignal":
 			await wf_handle.signal(signal_type)
 		elif signal_type == "CancelSubscriptionSignal":

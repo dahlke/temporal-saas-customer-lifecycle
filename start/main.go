@@ -26,7 +26,7 @@ func main() {
 
 	// Start the Workflow
 	accountName := "Temporal"
-	emails := []string{"neil@dahlke.io", "neil.dahlke@temporal.io"}
+	emails := []string{"sa@temporal.io", "solutions@temporal.io"}
 	price := 10.0
 	input := types.LifecycleWorkflowInput{
 		AccountName: accountName,

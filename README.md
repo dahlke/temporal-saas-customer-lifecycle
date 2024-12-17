@@ -156,12 +156,12 @@ And if you want to debug the most recent workflow, you can use the following com
 temporal workflow signal \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
     --name ResendClaimCodesSignal \
-    --input '{"email": "neil.dahlke@temporal.io"}'
+    --input '{"email": "sa@temporal.io"}'
 
 temporal workflow signal \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
     --name CancelSubscriptionSignal \
-    --input '{"email": "neil.dahlke@temporal.io"}'
+    --input '{"email": "sa@temporal.io"}'
 
 temporal workflow update execute \
     --workflow-id=$(temporal workflow list --limit 1  | awk 'NR==2 {print $2}') \
