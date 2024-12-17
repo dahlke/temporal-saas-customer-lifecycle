@@ -41,7 +41,7 @@ function runWorkflow() {
 
 // TODO: clean up all of this code.
 
-var childWorkflowID = "";
+var GLOBAL_childWorkflowID = "";
 
 function updateProgress() {
 	var urlParams = new URLSearchParams(window.location.search);
@@ -63,7 +63,7 @@ function updateProgress() {
 			console.log(data);
 
 			if (scenario === "CHILD_WORKFLOW" && data.child_workflow_id !== "") {
-				childWorkflowID = data.child_workflow_id;
+				GLOBAL_childWorkflowID = data.child_workflow_id;
 			}
 
 			var currentStatusEl = document.getElementById("currentStatus");
@@ -102,8 +102,8 @@ function signal(signalType, payload) {
 	// Get the wfID from the URL query parameters
 	var urlParams = new URLSearchParams(window.location.search);
 	var wfID = urlParams.get("wfID");
-	if (childWorkflowID !== "") {
-		wfID = childWorkflowID;
+	if (GLOBAL_childWorkflowID !== "") {
+		wfID = GLOBAL_childWorkflowID;
 	}
 	var scenario = urlParams.get("scenario");
 
