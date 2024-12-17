@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"math/rand"
 	"temporal-saas-customer-lifecycle/messages"
 	"temporal-saas-customer-lifecycle/types"
 	"time"
@@ -14,16 +13,6 @@ import (
 )
 
 var lifecycleStatusKey = temporal.NewSearchAttributeKeyKeyword("LifecycleStatus")
-
-func generateNewClaimCode() string {
-	const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	rand.Seed(time.Now().UnixNano())
-	b := make([]byte, 3)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
-}
 
 // LifecycleWorkflow orchestrates the lifecycle process for a new customer.
 func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput) (string, error) {
@@ -43,7 +32,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	}
 
 	// Initialize claim codes for each email
-	claimCodes := []string{"XXX", "YYY"}
+	claimCodes := []string{generateNewClaimCode(), generateNewClaimCode()}
 	for i, email := range input.Emails {
 		state.ClaimCodes[i] = types.ClaimCodeStatus{
 			Email:     email,
@@ -51,6 +40,8 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 			IsClaimed: false,
 		}
 	}
+
+	logger.Info("Claim codes after assignment", "claimCodes", state.ClaimCodes)
 
 	// Set initial search attribute for the workflow
 	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("STARTED"))
@@ -183,6 +174,8 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 				for i := range state.ClaimCodes {
 					state.ClaimCodes[i].Code = generateNewClaimCode()
 				}
+
+				logger.Info("New claim codes after assignment", "claimCodes", state.ClaimCodes)
 
 				// Resend claim codes for each email
 				for _, claimCode := range state.ClaimCodes {
