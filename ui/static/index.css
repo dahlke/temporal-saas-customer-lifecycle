@@ -24,8 +24,6 @@ table {
 }
 
 .scenario-table {
-	height: 300px;
-	overflow-y: auto;
 	display: block;
 }
 

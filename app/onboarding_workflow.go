@@ -44,9 +44,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	logger.Info("Claim codes after assignment", "claimCodes", state.ClaimCodes)
 
 	// Set initial search attribute for the workflow
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("STARTED"))
-	state.Progress = 10
 	state.Status = "STARTED"
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
+	state.Progress = 10
 
 	// Define retry policy for activities
 	retrypolicy := &temporal.RetryPolicy{
@@ -87,9 +87,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	}
 
 	// Update search attribute to indicate charging phase
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CHARGING"))
-	state.Progress = 20
 	state.Status = "CHARGING"
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
+	state.Progress = 20
 
 	// Charge customer
 	var chargeResult string
@@ -101,9 +101,8 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	logger.Info("Successfully charged customer", "result", chargeResult)
 
 	// Update search attribute to indicate account creation phase
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CREATING_ACCOUNT"))
-	state.Progress = 30
 	state.Status = "CREATING_ACCOUNT"
+	state.Progress = 30
 
 	// Create account
 	var createAccountResult string
@@ -115,9 +114,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	logger.Info("Successfully created account", "result", createAccountResult)
 
 	// Update search attribute to indicate admin user creation phase
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CREATING_ADMIN_USERS"))
 	state.Progress = 40
 	state.Status = "CREATING_ADMIN_USERS"
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 
 	// Create admin users
 	var createAdminUsersResult string
@@ -135,9 +134,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	}
 
 	// Update search attribute to indicate claim code sending phase
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_CLAIM_CODES"))
-	state.Progress = 50
 	state.Status = "SENDING_CLAIM_CODES"
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
+	state.Progress = 50
 
 	// Send claim codes
 	for _, claimCode := range state.ClaimCodes {
@@ -151,9 +150,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	}
 
 	// Update search attribute to indicate waiting for claim codes
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("WAITING_FOR_CLAIM_CODES"))
 	state.Progress = 60
 	state.Status = "WAITING_FOR_CLAIM_CODES"
+	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 
 	// Await signal message to update address
 	logger.Info(fmt.Sprintf("Waiting up to %d seconds for claim codes", ACCEPTANCE_TIME))
@@ -207,8 +206,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 
 	// If the update wasn't received or was false, fail the workflow
 	if !ok {
-		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("CODE_NOT_CLAIMED"))
+		state.Progress = 100
 		state.Status = "CODE_NOT_CLAIMED"
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 		logger.Info("Claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
 	}
 
@@ -221,9 +221,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 			}
 		}
 
-		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_WELCOME_EMAIL"))
 		state.Progress = 70
 		state.Status = "SENDING_WELCOME_EMAIL"
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 
 		// Send welcome email
 		var sendWelcomeEmailResult string
@@ -241,11 +241,11 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 		logger.Info("Waiting 1 seconds before sending feedback email")
 		workflow.Sleep(ctx, time.Second*1)
 
-		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SENDING_FEEDBACK_EMAIL"))
 		state.Progress = 80
 		state.Status = "SENDING_FEEDBACK_EMAIL"
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 
-		// Send feedback email
+		// Send feedback emai
 		var sendFeedbackEmailResult string
 		err = workflow.ExecuteActivity(ctx, SendFeedbackEmail, input).Get(ctx, &sendFeedbackEmailResult)
 		if err != nil {
@@ -254,9 +254,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 		}
 		logger.Info("Successfully sent feedback email", "result", sendFeedbackEmailResult)
 
-		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("ONBOARDED"))
 		state.Progress = 90
 		state.Status = "ONBOARDED"
+		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 
 		if input.Scenario == SCENARIO_CHILD_WORKFLOW {
 			// Start the subscription child workflow
@@ -285,8 +285,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 					// Break the loop when the signal is received
 					logger.Info("Received cancel subscription signal")
 					subscriptionCanceled = true
-					workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
+					state.Progress = 100
 					state.Status = "SUBSCRIPTION_CANCELED"
+					workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 				})
 				selector.AddFuture(workflow.NewTimer(ctx, time.Second*3), func(f workflow.Future) {
 					// Timer expired, continue the loop
@@ -310,12 +311,12 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 
 				numRenews++
 				renewStatus := fmt.Sprintf("RENEWED_%d", numRenews)
-				workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(renewStatus))
 				state.Status = renewStatus
+				workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 			}
 		}
 
-		// TODO: we could also clean up the admin users and account here
+		// TODO: we could also clean up the admin users and account here when the subscription is canceled
 		// saga.AddCompensation(DeleteAccount, input)
 		// saga.AddCompensation(DeleteAdminUsers, input)
 		state.Progress = 100
