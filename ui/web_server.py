@@ -17,23 +17,23 @@ temporal_ui_url = TEMPORAL_ADDRESS.replace("7233", "8233") if "localhost" in TEM
 
 # Define the available scenarios
 SCENARIOS = {
-	"happy_path": {
+	"HAPPY_PATH": {
 		"title": "Happy Path",
 		"description": "This will run the usual scenario with no failures, including signals to re-send claim codes and updates to accept and validate claim codes. The subscription loop will be run within the main workflow."
 	},
-	"recoverable_failure": {
+	"RECOVERABLE_FAILURE": {
 		"title": "Recoverable Failure (Bug in Code)",
 		"description": "This will cause the workflow to fail in a recoverable way. This means you can comment out the line that causes the error and continue the workflow."
 	},
-	"non_recoverable_failure": {
+	"NON_RECOVERABLE_FAILURE": {
 		"title": "Non Recoverable Failure (Non-Retryable)",
 		"description": "This will cause the workflow to fail entirely, by throwing a non-retryable error."
 	},
-	"api_failure": {
+	"API_FAILURE": {
 		"title": "API Failure (recover on 5th attempt)",
 		"description": "This workflow will fail 5 times at the Create Admin Users activity, simulating a downstream API outage."
 	},
-	"child_workflow": {
+	"CHILD_WORKFLOW": {
 		"title": "Child Workflow",
 		"description": "This will run the Happy Path then spawn a child workflow to manage the subscription lifecycle."
 	},
@@ -70,7 +70,6 @@ async def run_workflow():
 	# Get the selected scenario and workflow ID from the request arguments
 	selected_scenario = request.args.get("scenario", "")
 	wf_id = request.args.get("wfID", "")
-	print(wf_id)
 
 	# Create Workflow input
 	wf_input = LifecycleWorkflowInput(
@@ -128,7 +127,6 @@ async def get_progress():
 		workflow_desc = await wf_handle.describe()
 		payload = await wf_handle.query("GetState")
 
-		print(workflow_desc.status)
 		if workflow_desc.status == 3:
 			error_message = "Workflow failed: {wf_id}"
 			print(f"Error in get_progress route: {error_message}")

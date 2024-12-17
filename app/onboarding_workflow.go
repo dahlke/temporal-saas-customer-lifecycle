@@ -262,7 +262,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 			// Start the subscription child workflow
 			ChildWorkflowOptions := workflow.ChildWorkflowOptions{
 				WorkflowID:        fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String()),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
 			}
 			ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
 			err := workflow.ExecuteChildWorkflow(ctx, SubscriptionChildWorkflow, input).Get(ctx, nil)

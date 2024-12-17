@@ -30,22 +30,22 @@ func SubscriptionChildWorkflow(ctx workflow.Context, input types.LifecycleWorkfl
 	subscriptionCanceled := false
 	numRenews := 0
 	for {
-		logger.Info("Waiting for 10 seconds to charge the customer or until a cancel subscription signal is received")
+		logger.Info("Waiting for 3 seconds to charge the customer or until a cancel subscription signal is received")
 		// Wait for 10 seconds or until a cancel subscription signal is received
 		selector := workflow.NewSelector(ctx)
 		selector.AddReceive(cancelSubscriptionSignalChan, func(c workflow.ReceiveChannel, more bool) {
-			// Break the loop when the signal is received
 			logger.Info("Received cancel subscription signal")
 			subscriptionCanceled = true
 			workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
 		})
-		selector.AddFuture(workflow.NewTimer(ctx, time.Second*10), func(f workflow.Future) {
+		selector.AddFuture(workflow.NewTimer(ctx, time.Second*3), func(f workflow.Future) {
 			// Timer expired, continue the loop
 		})
 		selector.Select(ctx)
 
 		// Check if the subscription was canceled
 		if subscriptionCanceled {
+			fmt.Println("Subscription canceled")
 			break
 		}
 

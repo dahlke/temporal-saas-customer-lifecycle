@@ -60,7 +60,11 @@ function updateProgress() {
 
 			var currentStatusEl = document.getElementById("currentStatus");
 			if (currentStatusEl != null) {
-				currentStatusEl.innerText = data.status;
+				if (scenario === "CHILD_WORKFLOW" && data.status === "ONBOARDED") {
+					currentStatusEl.innerText = "CHILD_WORKFLOW_STARTED";
+				} else {
+					currentStatusEl.innerText = data.status;
+				}
 			}
 
 			if (data.status === "WAITING_FOR_CLAIM_CODES") {
@@ -69,7 +73,7 @@ function updateProgress() {
 				document.getElementById("codesContainer").style.display = "block";
 
 				updateCodesContainer(data.claim_codes);
-			} else if (data.status.includes("RENEWED")) {
+			} else if (data.status.includes("RENEWED") || (scenario == "CHILD_WORKFLOW" && data.status === "ONBOARDED")) {
 				document.getElementById("cancelSignalContainer").style.display = "block";
 			} else if (data.status.includes("CODE_NOT_CLAIMED")) {
 				window.location.href =
