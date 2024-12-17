@@ -317,6 +317,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 		// TODO: we could also clean up the admin users and account here when the subscription is canceled
 		// saga.AddCompensation(DeleteAccount, input)
 		// saga.AddCompensation(DeleteAdminUsers, input)
+
 		state.Progress = 100
 		state.Status = "SUBSCRIPTION_CANCELED"
 		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))

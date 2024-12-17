@@ -46,6 +46,7 @@ func SubscriptionChildWorkflow(ctx workflow.Context, input types.LifecycleWorkfl
 		// Check if the subscription was canceled
 		if subscriptionCanceled {
 			fmt.Println("Subscription canceled")
+			workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet("SUBSCRIPTION_CANCELED"))
 			break
 		}
 
@@ -62,8 +63,5 @@ func SubscriptionChildWorkflow(ctx workflow.Context, input types.LifecycleWorkfl
 		logger.Info("Successfully charged customer", "result", chargeResult)
 	}
 
-	status := "SUBSCRIPTION_CANCELED"
-	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(status))
-
-	return status, nil
+	return "SUBSCRIPTION_CANCELED", nil
 }
