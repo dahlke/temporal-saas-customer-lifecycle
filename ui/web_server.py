@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # Define search attribute keys for workflow search
 lifecycle_status_key = SearchAttributeKey.for_text("LifecycleStatus")
-temporal_ui_url = TEMPORAL_ADDRESS.replace("7233", "8233") if "localhost" in TEMPORAL_ADDRESS \
+TEMPORAL_UI_URL = TEMPORAL_ADDRESS.replace("7233", "8233") if "localhost" in TEMPORAL_ADDRESS \
 	else "https://cloud.temporal.io"
 
 # Define the available scenarios
@@ -59,7 +59,7 @@ async def main():
 		wf_id=wf_id,
 		scenarios=SCENARIOS,
 		temporal_host_url=TEMPORAL_ADDRESS,
-		temporal_ui_url=temporal_ui_url,
+		temporal_ui_url=TEMPORAL_UI_URL,
 		temporal_namespace=TEMPORAL_NAMESPACE,
 		payloads_encrypted=ENCRYPT_PAYLOADS
 	)
@@ -107,7 +107,7 @@ async def run_workflow():
 		wf_id=wf_id,
 		selected_scenario=selected_scenario,
 		temporal_host_url=TEMPORAL_ADDRESS,
-		temporal_ui_url=temporal_ui_url,
+		temporal_ui_url=TEMPORAL_UI_URL,
 		temporal_namespace=TEMPORAL_NAMESPACE,
 		payloads_encrypted=ENCRYPT_PAYLOADS
 	)
@@ -132,6 +132,9 @@ async def get_progress():
 			print(f"Error in get_progress route: {error_message}")
 			return redirect(url_for('end_workflow', wfID=wf_id, scenario=scenario))
 
+		payload["temporal_ui_url"] = TEMPORAL_UI_URL
+		payload["temporal_namespace"] = TEMPORAL_NAMESPACE
+
 		return jsonify(payload)
 	except Exception as e:
 		print(e)
@@ -152,7 +155,7 @@ async def end_workflow():
 		wf_id=wf_id,
 		status=status,
 		temporal_host_url=TEMPORAL_ADDRESS,
-		temporal_ui_url=temporal_ui_url,
+		temporal_ui_url=TEMPORAL_UI_URL,
 		temporal_namespace=TEMPORAL_NAMESPACE,
 		payloads_encrypted=ENCRYPT_PAYLOADS
 	)
@@ -162,8 +165,6 @@ async def end_workflow():
 async def signal():
 	wf_id = request.args.get("wfID", "")
 	signal_type = request.json.get("signalType", "")
-
-	# TODO: get the child workflow and send the signal to It
 
 	try:
 		client = await _get_singleton_temporal_client()

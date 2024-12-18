@@ -28,19 +28,6 @@ function updateCodesContainer(data) {
     });
 }
 
-
-function runWorkflow() {
-	var scenario = document.getElementById("scenario").value;
-	var wfID = `customer-lifecycle-${generateUUID()}`;
-
-	// Redirect to run_workflow page with the selected scenario as a query parameter
-	window.location.href =
-		"/run_workflow?scenario=" + encodeURIComponent(scenario) +
-		"&wfID=" + encodeURIComponent(wfID)
-}
-
-// TODO: clean up all of this code.
-
 var GLOBAL_childWorkflowID = "";
 
 function updateProgress() {
@@ -60,10 +47,22 @@ function updateProgress() {
 			document.getElementById("errorMessage").innerText = "";
 			document.getElementById("progressBar").style.width = data.progress + "%";
 
-			console.log(data);
-
 			if (scenario === "CHILD_WORKFLOW" && data.child_workflow_id !== "") {
 				GLOBAL_childWorkflowID = data.child_workflow_id;
+
+				// Check if the row already exists
+				if (!document.getElementById("childWorkflowRow")) {
+					const table = document.getElementById("workflowInfoTable");
+					const newRow = table.insertRow();
+					newRow.id = "childWorkflowRow"; // Set the ID for the new row
+
+					const cell1 = document.createElement('th');
+					cell1.innerHTML = "Child Workflow ID";
+					newRow.appendChild(cell1);
+
+					const cell2 = newRow.insertCell(1);
+					cell2.innerHTML = `<a href="${data.temporal_ui_url}/namespaces/${data.temporal_namespace}/workflows/${GLOBAL_childWorkflowID}" target="_blank">${GLOBAL_childWorkflowID}</a>`;
+				}
 			}
 
 			var currentStatusEl = document.getElementById("currentStatus");
@@ -96,6 +95,16 @@ function updateProgress() {
 			document.getElementById("errorMessage").innerText = error.message;
 			document.getElementById("progressBar").style.backgroundColor = "red";
 		});
+}
+
+function runWorkflow() {
+	var scenario = document.getElementById("scenario").value;
+	var wfID = `customer-lifecycle-${generateUUID()}`;
+
+	// Redirect to run_workflow page with the selected scenario as a query parameter
+	window.location.href =
+		"/run_workflow?scenario=" + encodeURIComponent(scenario) +
+		"&wfID=" + encodeURIComponent(wfID)
 }
 
 function signal(signalType, payload) {
@@ -179,12 +188,4 @@ function update() {
 function reloadMainPage() {
 	// Redirect to the main page
 	window.location.href = "/";
-}
-
-function stripAnsi(text) {
-  // This regex matches ANSI escape sequences
-  const ansiRegex = /\x1b\[[0-9;]*m/g;
-
-  // Replace the ANSI escape codes with an empty string
-  return text.replace(ansiRegex, "");
 }
