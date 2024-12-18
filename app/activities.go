@@ -15,7 +15,7 @@ func ChargeCustomer(ctx context.Context, input types.LifecycleWorkflowInput) (st
 	logger.Info("charging customer", "customer_id", input.AccountName, "amount", input.Price)
 	time.Sleep(1 * time.Second)
 
-	if input.Scenario == SCENARIO_EXPECTED_ERROR {
+	if input.Scenario == SCENARIO_NON_RECOVERABLE_FAILURE {
 		return "", temporal.NewNonRetryableApplicationError(
 			"charge customer activity failed, card invalid", "activityFailure",
 			errors.New("charge customer API failure, card invalid"),

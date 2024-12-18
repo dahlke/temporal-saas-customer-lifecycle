@@ -29,8 +29,8 @@ SCENARIOS = {
 		"title": "Non Recoverable Failure (Non-Retryable)",
 		"description": "This will cause the workflow to fail entirely, by throwing a non-retryable error."
 	},
-	"API_FAILURE": {
-		"title": "API Failure (recover on 5th attempt)",
+	"FLAKEY_API": {
+		"title": "Flakey API (API failures that recover on 5th attempt)",
 		"description": "This workflow will fail 5 times at the Create Admin Users activity, simulating a downstream API outage."
 	},
 	"CHILD_WORKFLOW": {

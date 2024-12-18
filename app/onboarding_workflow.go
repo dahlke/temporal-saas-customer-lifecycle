@@ -55,7 +55,6 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 		MaximumInterval:    time.Second * 10,
 		MaximumAttempts:    10,
 		/*
-			// TODO
 			NonRetryableErrorTypes: []string{
 			},
 		*/
@@ -127,10 +126,10 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	saga.AddCompensation(DeleteAdminUsers, input)
 	logger.Info("Successfully created admin users", "result", createAdminUsersResult)
 
-	if input.Scenario == SCENARIO_UNEXPECTED_BUG {
+	if input.Scenario == SCENARIO_RECOVERABLE_FAILURE {
 		// Simulate bug
 		// NOTE: comment out this line to see the happy path
-		panic("Simulated bug - fix me!")
+		// panic("Simulated bug - fix me!")
 	}
 
 	// Update search attribute to indicate claim code sending phase
@@ -200,12 +199,12 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 	}
 
 	// Wait for up to ACCEPTANCE_TIME seconds for the update
-	ok, _ := workflow.AwaitWithTimeout(ctx, time.Second*ACCEPTANCE_TIME, func() bool {
+	codeWasClaimed, _ := workflow.AwaitWithTimeout(ctx, time.Second*ACCEPTANCE_TIME, func() bool {
 		return claimed
 	})
 
 	// If the update wasn't received or was false, fail the workflow
-	if !ok {
+	if !codeWasClaimed {
 		state.Progress = 100
 		state.Status = "CODE_NOT_CLAIMED"
 		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
