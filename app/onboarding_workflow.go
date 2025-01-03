@@ -257,13 +257,13 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 
 		if input.Scenario == SCENARIO_CHILD_WORKFLOW {
 			// Start the subscription child workflow
-			state.ChildWorkflowID = fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String())
+			state.ChildWorkflowID = fmt.Sprintf("subscription-billing-%v-%v", input.AccountName, uuid.New().String())
 			ChildWorkflowOptions := workflow.ChildWorkflowOptions{
 				WorkflowID:        state.ChildWorkflowID,
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
 			}
 			ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
-			err := workflow.ExecuteChildWorkflow(ctx, SubscriptionChildWorkflow, input).Get(ctx, nil)
+			err := workflow.ExecuteChildWorkflow(ctx, SubscriptionBillingWorkflow, input).Get(ctx, nil)
 			if err != nil {
 				logger.Error("Failed to start subscription child workflow", "error", err)
 				return "", err
@@ -271,15 +271,15 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 			logger.Info("Started Child Workflow: " + ChildWorkflowOptions.WorkflowID)
 		} else if input.Scenario == SCENARIO_NEXUS_WORKFLOW {
 			logger.Info("Starting Nexus Workflow")
-			/*
-				// Start the subscription child workflow
-				state.ChildWorkflowID = fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String())
-				ChildWorkflowOptions := workflow.ChildWorkflowOptions{
-					WorkflowID:        state.ChildWorkflowID,
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
-				}
-				ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
-			*/
+
+			var op workflow.NexusOperationExecution
+			// TODO: get from env
+			service := workflow.NewNexusClient(GetEnv("NEXUS_BILLING_ENDPOINT", "SUBSCRIPTION_BILLING_ENDPOINT"), NEXUS_BILLING_SERVICE_NAME)
+
+			nf := service.ExecuteOperation(ctx, NEXUS_BILLING_OPERATION_NAME, input, workflow.NexusOperationOptions{})
+			nf.GetNexusOperationExecution().Get(ctx, &op)
+
+			logger.Info(" Started Nexus Operation: " + op.OperationID)
 		} else {
 			// Create a channel to receive the cancel subscription signal
 			cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)

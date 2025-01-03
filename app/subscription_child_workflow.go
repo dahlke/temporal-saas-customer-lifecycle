@@ -10,7 +10,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func SubscriptionChildWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput) (string, error) {
+func SubscriptionBillingWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Subscription child workflow started", "accountName", input.AccountName)
 

@@ -14,6 +14,9 @@ const (
 	SCENARIO_NON_RECOVERABLE_FAILURE = "NON_RECOVERABLE_FAILURE"
 	SCENARIO_CHILD_WORKFLOW          = "CHILD_WORKFLOW"
 	SCENARIO_NEXUS_WORKFLOW          = "NEXUS"
+	// TODO: get from env
+	NEXUS_BILLING_SERVICE_NAME   = "BillingService"
+	NEXUS_BILLING_OPERATION_NAME = "BillingOperation"
 )
 
 func generateNewClaimCode() string {

@@ -19,7 +19,7 @@ func main() {
 	// This worker hosts both Workflow and Activity functions
 	w := worker.New(c, app.LIFECYCLE_TASK_QUEUE, worker.Options{})
 	w.RegisterWorkflow(app.LifecycleWorkflow)
-	w.RegisterWorkflow(app.SubscriptionChildWorkflow)
+	w.RegisterWorkflow(app.SubscriptionBillingWorkflow)
 	w.RegisterActivity(app.ChargeCustomer)
 	w.RegisterActivity(app.CreateAccount)
 	w.RegisterActivity(app.CreateAdminUsers)
