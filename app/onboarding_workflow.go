@@ -209,9 +209,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 		state.Status = "CODE_NOT_CLAIMED"
 		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 		logger.Info("Claim codes not accepted within %d seconds", ACCEPTANCE_TIME)
-	}
-
-	if state.Status != "CODE_NOT_CLAIMED" {
+	} else {
 		// Update the claim status in the workflow state
 		for i := range state.ClaimCodes {
 			if state.ClaimCodes[i].Code == acceptedCode {
@@ -271,6 +269,17 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput)
 				return "", err
 			}
 			logger.Info("Started Child Workflow: " + ChildWorkflowOptions.WorkflowID)
+		} else if input.Scenario == SCENARIO_NEXUS_WORKFLOW {
+			logger.Info("Starting Nexus Workflow")
+			/*
+				// Start the subscription child workflow
+				state.ChildWorkflowID = fmt.Sprintf("subscription-%v-%v", input.AccountName, uuid.New().String())
+				ChildWorkflowOptions := workflow.ChildWorkflowOptions{
+					WorkflowID:        state.ChildWorkflowID,
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
+				}
+				ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
+			*/
 		} else {
 			// Create a channel to receive the cancel subscription signal
 			cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)

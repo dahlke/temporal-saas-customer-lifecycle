@@ -10,11 +10,8 @@ export TEMPORAL_KEY_PATH=$(temporal env get --env ${TEMPORAL_ENV} --key tls-key-
 export TEMPORAL_TLS_CERT=$(temporal env get --env ${TEMPORAL_ENV} --key tls-cert-path -o json | jq -r '.[].value')
 export TEMPORAL_TLS_KEY=$(temporal env get --env ${TEMPORAL_ENV} --key tls-key-path -o json | jq -r '.[].value')
 
-# Required
-export TF_VAR_prefix="<your_name>"
-
 # Optional
-export TEMPORAL_ADDRESS="host.docker.internal:7233" # For Docker workers
-export TEMPORAL_TASK_QUEUE="<task_queue_name>"
-export TEMPORAL_MTLS_DIR="<path_to_mtls_certs>"
+export TEMPORAL_TASK_QUEUE="LIFECYCLE_TASK_QUEUE"
+export TEMPORAL_NEXUS_BILLING_TASK_QUEUE="SUBSCRIPTION_BILLING_TASK_QUEUE"
+export TEMPORAL_NEXUS_BILLING_ENDPOINT="SUBSCRIPTION_BILLING_ENDPOINT"
 export ENCRYPT_PAYLOADS=true
