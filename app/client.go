@@ -33,8 +33,8 @@ func GetClientOptions() client.Options {
 	}
 
 	apiKey := GetEnv("TEMPORAL_API_KEY", "")
-	tlsCertPath := GetEnv("TEMPORAL_CERT_PATH", "")
-	tlsKeyPath := GetEnv("TEMPORAL_KEY_PATH", "")
+	tlsCertPath := GetEnv("TEMPORAL_TLS_CERT", "")
+	tlsKeyPath := GetEnv("TEMPORAL_TLS_KEY", "")
 
 	switch {
 	case apiKey != "":

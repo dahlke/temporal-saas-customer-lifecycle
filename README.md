@@ -83,8 +83,8 @@ First, you will need to set the following environment variables if you are using
 
 ```bash
 export TEMPORAL_ADDRESS="<namespace>.<accountId>.tmprl.cloud:7233"
-export TEMPORAL_CERT_PATH="/path/to/ca.pem"
-export TEMPORAL_KEY_PATH="/path/to/ca.key"
+export TEMPORAL_TLS_CERT="/path/to/ca.pem"
+export TEMPORAL_TLS_KEY="/path/to/ca.key"
 export TEMPORAL_NAMESPACE="<namespace>"
 export TEMPORAL_LIFECYCLE_TASK_QUEUE="lifecycle"
 ```

@@ -37,6 +37,10 @@ SCENARIOS = {
 		"title": "Child Workflow",
 		"description": "This will run the Happy Path then spawn a child workflow to manage the subscription lifecycle."
 	},
+	"NEXUS": {
+		"title": "Nexus Workflow",
+		"description": "This will run the Happy Path then spawn a workflow in another workspace to manage the subscription lifecycle."
+	},
 }
 
 # Global variable to store the Temporal client
