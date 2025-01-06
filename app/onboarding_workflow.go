@@ -15,7 +15,7 @@ import (
 var lifecycleStatusKey = temporal.NewSearchAttributeKeyKeyword("LifecycleStatus")
 
 // LifecycleWorkflow orchestrates the lifecycle process for a new customer.
-func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleWorkflowInput) (string, error) {
+func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string, error) {
 	logger := workflow.GetLogger(ctx)
 
 	// Log the start of the workflow

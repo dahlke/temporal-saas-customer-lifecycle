@@ -98,7 +98,7 @@ class LifecycleWorkflowState:
 	claim_codes: List[ClaimCodeStatus]
 
 @dataclass
-class LifecycleWorkflowInput:
+class LifecycleInput:
 	account_name: str
 	emails: List[str]
 	price: float

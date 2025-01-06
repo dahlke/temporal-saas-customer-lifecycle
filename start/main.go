@@ -28,7 +28,7 @@ func main() {
 	accountName := "Temporal"
 	emails := []string{"sa@temporal.io", "solutions@temporal.io"}
 	price := 10.0
-	input := types.LifecycleWorkflowInput{
+	input := types.LifecycleInput{
 		AccountName: accountName,
 		Emails:      emails,
 		Price:       price,

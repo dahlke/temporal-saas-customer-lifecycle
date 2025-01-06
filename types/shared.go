@@ -20,7 +20,7 @@ type LifecycleWorkflowState struct {
 	ChildWorkflowID string            `json:"child_workflow_id"`
 }
 
-type LifecycleWorkflowInput struct {
+type LifecycleInput struct {
 	AccountName string   `json:"account_name"`
 	Emails      []string `json:"emails"`
 	Price       float64  `json:"price"`

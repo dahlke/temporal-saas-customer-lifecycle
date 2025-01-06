@@ -10,7 +10,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 )
 
-func ChargeCustomer(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func ChargeCustomer(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("charging customer", "customer_id", input.AccountName, "amount", input.Price)
 	time.Sleep(1 * time.Second)
@@ -25,28 +25,28 @@ func ChargeCustomer(ctx context.Context, input types.LifecycleWorkflowInput) (st
 	return "success", nil
 }
 
-func RefundCustomer(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func RefundCustomer(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("refunding customer", "customer_id", input.AccountName, "amount", input.Price)
 	time.Sleep(1 * time.Second)
 	return "success", nil
 }
 
-func CreateAccount(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func CreateAccount(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("creating account", "email", input.AccountName)
 	time.Sleep(1 * time.Second)
 	return "success", nil
 }
 
-func DeleteAccount(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func DeleteAccount(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("deleting account", "email", input.AccountName)
 	time.Sleep(1 * time.Second)
 	return "success", nil
 }
 
-func CreateAdminUsers(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func CreateAdminUsers(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("creating admin users", "emails", input.Emails)
 	time.Sleep(1 * time.Second)
@@ -61,28 +61,28 @@ func CreateAdminUsers(ctx context.Context, input types.LifecycleWorkflowInput) (
 	return "success", nil
 }
 
-func DeleteAdminUsers(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func DeleteAdminUsers(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("deleting admin users", "emails", input.Emails)
 	time.Sleep(1 * time.Second)
 	return "success", nil
 }
 
-func SendClaimCodes(ctx context.Context, input types.LifecycleWorkflowInput, claimCode string) (string, error) {
+func SendClaimCodes(ctx context.Context, input types.LifecycleInput, claimCode string) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("sending claim code", "email", input.AccountName, "code", claimCode)
 	time.Sleep(1 * time.Second)
 	return "success", nil
 }
 
-func SendWelcomeEmail(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func SendWelcomeEmail(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("sending welcome email", "emails", input.Emails)
 	time.Sleep(1 * time.Second)
 	return "success", nil
 }
 
-func SendFeedbackEmail(ctx context.Context, input types.LifecycleWorkflowInput) (string, error) {
+func SendFeedbackEmail(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("sending feedback email", "emails", input.Emails)
 	time.Sleep(1 * time.Second)

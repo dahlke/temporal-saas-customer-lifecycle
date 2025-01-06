@@ -2,7 +2,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Dict
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from shared.base import get_temporal_client, LifecycleWorkflowInput, AcceptClaimCodeInput, \
+from shared.base import get_temporal_client, LifecycleInput, AcceptClaimCodeInput, \
 	TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE, TEMPORAL_TASK_QUEUE, ENCRYPT_PAYLOADS
 
 from temporalio.common import TypedSearchAttributes, SearchAttributeKey, \
@@ -76,7 +76,7 @@ async def run_workflow():
 	wf_id = request.args.get("wfID", "")
 
 	# Create Workflow input
-	wf_input = LifecycleWorkflowInput(
+	wf_input = LifecycleInput(
 		account_name="Temporal",
 		emails=["sa@temporal.io", "solutions@temporal.io"],
 		price=10.0,

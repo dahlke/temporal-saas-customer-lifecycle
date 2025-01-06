@@ -15,7 +15,7 @@ import (
 var BillingOperation = temporalnexus.NewWorkflowRunOperation(
 	app.NEXUS_BILLING_OPERATION_NAME,
 	app.SubscriptionBillingWorkflow,
-	func(ctx context.Context, input types.LifecycleWorkflowInput, soo nexus.StartOperationOptions) (client.StartWorkflowOptions, error) {
+	func(ctx context.Context, input types.LifecycleInput, soo nexus.StartOperationOptions) (client.StartWorkflowOptions, error) {
 		return client.StartWorkflowOptions{ID: fmt.Sprintf("subscription-billing-%v-%v", input.AccountName, input.Emails)}, nil
 	},
 )
