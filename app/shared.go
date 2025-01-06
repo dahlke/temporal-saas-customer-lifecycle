@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	LIFECYCLE_TASK_QUEUE             = "LIFECYCLE_TASK_QUEUE"
+	LIFECYCLE_TASK_QUEUE             = "lifecycle-task-queue"
 	ACCEPTANCE_TIME                  = 120 // Time in seconds to wait for claim codes to be accepted
 	SCENARIO_HAPPY_PATH              = "HAPPY_PATH"
 	SCENARIO_FLAKEY_API              = "FLAKEY_API"

@@ -86,7 +86,7 @@ export TEMPORAL_ADDRESS="<namespace>.<accountId>.tmprl.cloud:7233"
 export TEMPORAL_TLS_CERT="/path/to/ca.pem"
 export TEMPORAL_TLS_KEY="/path/to/ca.key"
 export TEMPORAL_NAMESPACE="<namespace>"
-export TEMPORAL_LIFECYCLE_TASK_QUEUE="lifecycle"
+export TEMPORAL_LIFECYCLE_TASK_QUEUE="lifecycle-task-queue"
 ```
 
 If you are using Temporal Cloud, the command will look a bit different, using `tcld namespace search-attributes-add`.
