@@ -94,15 +94,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 	workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 	state.Progress = 20
 
-	billingInput := types.BillingInput{
-		AccountName: input.AccountName,
-		Price:       input.Price,
-		Scenario:    input.Scenario,
-	}
-
 	// Charge customer
 	var chargeResult string
-	err = workflow.ExecuteActivity(ctx, ChargeCustomer, billingInput).Get(ctx, &chargeResult)
+	err = workflow.ExecuteActivity(ctx, ChargeCustomer, input).Get(ctx, &chargeResult)
 	if err != nil {
 		return "", err
 	}
@@ -267,13 +261,13 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 
 		if input.Scenario == SCENARIO_CHILD_WORKFLOW {
 			// Start the subscription child workflow
-			state.ChildWorkflowID = fmt.Sprintf("subscription-billing-%v-%v", billingInput.AccountName, uuid.New().String())
+			state.ChildWorkflowID = fmt.Sprintf("subscription-billing-%v-%v", input.AccountName, uuid.New().String())
 			ChildWorkflowOptions := workflow.ChildWorkflowOptions{
 				WorkflowID:        state.ChildWorkflowID,
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
 			}
 			ctx = workflow.WithChildOptions(ctx, ChildWorkflowOptions)
-			err := workflow.ExecuteChildWorkflow(ctx, SubscriptionBillingWorkflow, billingInput).Get(ctx, nil)
+			err := workflow.ExecuteChildWorkflow(ctx, SubscriptionBillingWorkflow, input).Get(ctx, nil)
 			if err != nil {
 				logger.Error("Failed to start subscription child workflow", "error", err)
 				return "", err
@@ -285,7 +279,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 			var op workflow.NexusOperationExecution
 			service := workflow.NewNexusClient(GetEnv("NEXUS_BILLING_ENDPOINT", "subscription-billing-endpoint"), NEXUS_BILLING_SERVICE_NAME)
 
-			temporalnexus.NewWorkflowRunOperation(NEXUS_BILLING_OPERATION_NAME, SubscriptionBillingWorkflow, func(ctx context.Context, input types.BillingInput, options nexus.StartOperationOptions) (client.StartWorkflowOptions, error) {
+			temporalnexus.NewWorkflowRunOperation(NEXUS_BILLING_OPERATION_NAME, SubscriptionBillingWorkflow, func(ctx context.Context, input types.LifecycleInput, options nexus.StartOperationOptions) (client.StartWorkflowOptions, error) {
 				return client.StartWorkflowOptions{
 					// Workflow IDs should typically be business meaningful IDs and are used to dedupe workflow starts.
 					// For this example, we're using the request ID allocated by Temporal when the caller workflow schedules
