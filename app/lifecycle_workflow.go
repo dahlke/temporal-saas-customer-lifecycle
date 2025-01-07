@@ -1,18 +1,14 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"temporal-saas-customer-lifecycle/messages"
 	"temporal-saas-customer-lifecycle/types"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nexus-rpc/sdk-go/nexus"
 	"go.temporal.io/api/enums/v1"
-	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/temporalnexus"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -36,7 +32,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 	}
 
 	// Initialize claim codes for each email
-	claimCodes := []string{generateNewClaimCode(), generateNewClaimCode()}
+	claimCodes := []string{GenerateNewClaimCode(), GenerateNewClaimCode()}
 	for i, email := range input.Emails {
 		state.ClaimCodes[i] = types.ClaimCodeStatus{
 			Email:     email,
@@ -174,7 +170,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 
 				// Generate new claim codes for each email
 				for i := range state.ClaimCodes {
-					state.ClaimCodes[i].Code = generateNewClaimCode()
+					state.ClaimCodes[i].Code = GenerateNewClaimCode()
 				}
 
 				logger.Info("New claim codes after assignment", "claimCodes", state.ClaimCodes)
@@ -277,18 +273,12 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 			logger.Info("Starting Nexus Workflow")
 
 			var op workflow.NexusOperationExecution
-			service := workflow.NewNexusClient(GetEnv("NEXUS_BILLING_ENDPOINT", "subscription-billing-endpoint"), NEXUS_BILLING_SERVICE_NAME)
+			service := workflow.NewNexusClient(GetEnv("NEXUS_BILLING_ENDPOINT", "subscription-billing-endpoint"), BillingServiceName)
 
-			temporalnexus.NewWorkflowRunOperation(NEXUS_BILLING_OPERATION_NAME, SubscriptionBillingWorkflow, func(ctx context.Context, input types.LifecycleInput, options nexus.StartOperationOptions) (client.StartWorkflowOptions, error) {
-				return client.StartWorkflowOptions{
-					// Workflow IDs should typically be business meaningful IDs and are used to dedupe workflow starts.
-					// For this example, we're using the request ID allocated by Temporal when the caller workflow schedules
-					// the operation, this ID is guaranteed to be stable across retries of this operation.
-					ID: options.RequestID,
-					// Task queue defaults to the task queue this operation is handled on.
-				}, nil
-			})
+			// TODO: wait for the opperation in perpetuity and cancel it when this workflow is canceled?
+			nf := service.ExecuteOperation(ctx, BillingOperationName, input, workflow.NexusOperationOptions{})
 
+			nf.GetNexusOperationExecution().Get(ctx, &op)
 			logger.Info("Started Nexus Operation: " + op.OperationID)
 		} else {
 			// Create a channel to receive the cancel subscription signal

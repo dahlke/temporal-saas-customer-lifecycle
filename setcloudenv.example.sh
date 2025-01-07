@@ -10,8 +10,10 @@ export TEMPORAL_TLS_KEY=$(temporal env get --env ${TEMPORAL_ENV} --key tls-key-p
 export TEMPORAL_API_KEY=$(temporal env get --env ${TEMPORAL_ENV} --key api-key -o json | jq -r '.[].value')
 
 # Optional
-export TEMPORAL_TASK_QUEUE="lifecycle-task-queue"
-# TODO: make sure these are truly optional
-export TEMPORAL_NEXUS_BILLING_TASK_QUEUE="SUBSCRIPTION_BILLING_TASK_QUEUE"
-export TEMPORAL_NEXUS_BILLING_ENDPOINT="SUBSCRIPTION_BILLING_ENDPOINT"
+export TEMPORAL_TASK_QUEUE="subscription-lifecycle-task-queue"
 export ENCRYPT_PAYLOADS=true
+
+export NEXUS_BILLING_ADDRESS="neil-dahlke-dev-nexus-target.sdvdw:7233"
+export NEXUS_BILLING_NAMESPACE="neil-dahlke-dev-nexus-target.sdvdw"
+export NEXUS_BILLING_TASK_QUEUE="subscription-billing-task-queue"
+export NEXUS_BILLING_ENDPOINT="subscription-billing-endpoint"

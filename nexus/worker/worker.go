@@ -13,14 +13,15 @@ import (
 )
 
 func main() {
-	c, err := client.Dial(app.GetClientOptions())
+	c, err := client.Dial(app.GetClientOptions(true))
 	if err != nil {
 		log.Fatalln("Unable to create client", err)
 	}
 	defer c.Close()
 
-	w := worker.New(c, app.GetEnv("TEMPORAL_NEXUS_BILLING_TASK_QUEUE", "billing"), worker.Options{})
-	service := nexus.NewService(app.NEXUS_BILLING_SERVICE_NAME)
+	w := worker.New(c, app.GetEnv("NEXUS_BILLING_TASK_QUEUE", "subscription-billing-task-queue"), worker.Options{})
+	// TODO: take this from the constants in shared.go?
+	service := nexus.NewService(app.BillingServiceName)
 	err = service.Register(handler.BillingOperation)
 	if err != nil {
 		log.Fatalln("Unable to register operations", err)

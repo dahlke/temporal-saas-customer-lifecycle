@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	LIFECYCLE_TASK_QUEUE             = "lifecycle-task-queue"
+	LIFECYCLE_TASK_QUEUE             = "subscription-lifecycle-task-queue"
 	ACCEPTANCE_TIME                  = 120 // Time in seconds to wait for claim codes to be accepted
 	SCENARIO_HAPPY_PATH              = "HAPPY_PATH"
 	SCENARIO_FLAKEY_API              = "FLAKEY_API"
@@ -14,12 +14,9 @@ const (
 	SCENARIO_NON_RECOVERABLE_FAILURE = "NON_RECOVERABLE_FAILURE"
 	SCENARIO_CHILD_WORKFLOW          = "CHILD_WORKFLOW"
 	SCENARIO_NEXUS_WORKFLOW          = "NEXUS"
-	// TODO: get from env
-	NEXUS_BILLING_SERVICE_NAME   = "BillingService"
-	NEXUS_BILLING_OPERATION_NAME = "BillingOperation"
 )
 
-func generateNewClaimCode() string {
+func GenerateNewClaimCode() string {
 	const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, 3)

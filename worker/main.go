@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Create the client object just once per process
-	c, err := client.Dial(app.GetClientOptions())
+	c, err := client.Dial(app.GetClientOptions(false))
 	if err != nil {
 		log.Fatalln("unable to create Temporal client", err)
 	}
@@ -18,6 +18,7 @@ func main() {
 
 	// This worker hosts both Workflow and Activity functions
 	w := worker.New(c, app.LIFECYCLE_TASK_QUEUE, worker.Options{})
+
 	w.RegisterWorkflow(app.LifecycleWorkflow)
 	w.RegisterWorkflow(app.SubscriptionBillingWorkflow)
 	w.RegisterActivity(app.ChargeCustomer)

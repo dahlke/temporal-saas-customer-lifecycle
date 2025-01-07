@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"log"
 	"log/slog"
@@ -18,14 +19,25 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func GetClientOptions() client.Options {
+func GetClientOptions(isNexus bool) client.Options {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 	slog.SetDefault(logger)
 
-	address := GetEnv("TEMPORAL_ADDRESS", "localhost:7233")
-	namespace := GetEnv("TEMPORAL_NAMESPACE", "default")
+	var address, namespace string
+
+	if isNexus {
+		address = GetEnv("NEXUS_BILLING_ADDRESS", "localhost:7233")
+		namespace = GetEnv("NEXUS_BILLING_NAMESPACE", "neil-dahlke-dev-nexus-target.sdvdw")
+	} else {
+		address = GetEnv("TEMPORAL_ADDRESS", "localhost:7233")
+		namespace = GetEnv("TEMPORAL_NAMESPACE", "default")
+	}
+
+	fmt.Println("address", address)
+	fmt.Println("namespace", namespace)
+
 	clientOptions := client.Options{
 		HostPort:  address,
 		Namespace: namespace,
