@@ -67,11 +67,9 @@ function updateProgress() {
 
 			var currentStatusEl = document.getElementById("currentStatus");
 			if (currentStatusEl != null) {
-				if (scenario === "CHILD_WORKFLOW" && data.status === "ONBOARDED") {
-					currentStatusEl.innerText = "CHILD_WORKFLOW_STARTED";
-				} else {
-					currentStatusEl.innerText = data.status;
-				}
+				// TODO: show the child status
+				// TODO: show the nexus status
+				currentStatusEl.innerText = data.status;
 			}
 
 			if (data.status === "WAITING_FOR_CLAIM_CODES") {
@@ -99,7 +97,8 @@ function updateProgress() {
 
 function runWorkflow() {
 	var scenario = document.getElementById("scenario").value;
-	var wfID = `customer-lifecycle-${generateUUID()}`;
+	var accountName = document.getElementById("accountName").value;
+	var wfID = `customer-lifecycle-${accountName}-${generateUUID()}`;
 
 	// Redirect to run_workflow page with the selected scenario as a query parameter
 	window.location.href =

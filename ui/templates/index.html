@@ -16,12 +16,17 @@
     {% endfor %}
 </table>
 
-<h4>Choose Scenario</h4>
+<h4>Account Name</h4>
+<input type="text" id="accountName" name="accountName" class="form-control" placeholder="Enter account name" value="Temporal" />
+
+<h5>Choose Scenario</h5>
 <select id="scenario" name="scenario" class="form-select">
     {% for name, scenario in scenarios.items() %}
         <option value="{{ name }}">{{ scenario["title"] }}</option>
     {% endfor %}
 </select>
+
+
 
 <button class="btn btn-primary" onclick="runWorkflow()">Run</button>
 

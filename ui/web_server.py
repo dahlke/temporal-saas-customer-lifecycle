@@ -55,12 +55,8 @@ async def _get_singleton_temporal_client():
 # Define the main route
 @app.route("/", methods=["GET", "POST"])
 async def main():
-	# Generate a unique workflow ID
-	wf_id = f"provision-infra-{uuid.uuid4()}"
-
 	return render_template(
 		"index.html",
-		wf_id=wf_id,
 		scenarios=SCENARIOS,
 		temporal_host_url=TEMPORAL_ADDRESS,
 		temporal_ui_url=TEMPORAL_UI_URL,
@@ -73,11 +69,12 @@ async def main():
 async def run_workflow():
 	# Get the selected scenario and workflow ID from the request arguments
 	selected_scenario = request.args.get("scenario", "")
+	account_name = request.args.get("accountName", "")
 	wf_id = request.args.get("wfID", "")
 
 	# Create Workflow input
 	wf_input = LifecycleInput(
-		account_name="Temporal",
+		account_name=account_name,
 		emails=["sa@temporal.io", "solutions@temporal.io"],
 		price=10.0,
 		scenario=selected_scenario,

@@ -19,11 +19,6 @@ func main() {
 	}
 	defer c.Close()
 
-	options := client.StartWorkflowOptions{
-		ID:        "lifecycle-workflow-" + uuid.New().String(),
-		TaskQueue: app.LIFECYCLE_TASK_QUEUE,
-	}
-
 	// Start the Workflow
 	accountName := "Temporal"
 	emails := []string{"sa@temporal.io", "solutions@temporal.io"}
@@ -33,6 +28,11 @@ func main() {
 		Emails:      emails,
 		Price:       price,
 		Scenario:    app.SCENARIO_CHILD_WORKFLOW,
+	}
+
+	options := client.StartWorkflowOptions{
+		ID:        "lifecycle-workflow-" + accountName + "-" + uuid.New().String(),
+		TaskQueue: app.LIFECYCLE_TASK_QUEUE,
 	}
 
 	wf, err := c.ExecuteWorkflow(

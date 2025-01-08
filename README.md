@@ -57,6 +57,8 @@ This demo shows how to implement a naive customer lifecycle workflow using Tempo
 - Unexpected Bug
 - Expected Error
 - Child Workflow
+- Nexus
+
 
 ## Setup
 
@@ -76,6 +78,9 @@ command.
 ```bash
 temporal operator search-attribute create --namespace default --name LifecycleStatus --type text
 ```
+
+_NOTE: If you want to use the Nexus scenario, you will need to create the search attribute in the
+Nexus target namespace._
 
 ### Configuring Temporal Cloud (Option #2)
 

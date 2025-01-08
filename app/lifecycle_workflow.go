@@ -269,6 +269,8 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 				return "", err
 			}
 			logger.Info("Started Child Workflow: " + ChildWorkflowOptions.WorkflowID)
+
+			state.Progress = 100
 		} else if input.Scenario == SCENARIO_NEXUS_WORKFLOW {
 			logger.Info("Starting Nexus Workflow")
 
@@ -320,14 +322,15 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 				state.Status = renewStatus
 				workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 			}
+
+			state.Progress = 100
+			state.Status = "SUBSCRIPTION_CANCELED"
 		}
 
 		// TODO: we could also clean up the admin users and account here when the subscription is canceled
 		// saga.AddCompensation(DeleteAccount, input)
 		// saga.AddCompensation(DeleteAdminUsers, input)
 
-		state.Progress = 100
-		state.Status = "SUBSCRIPTION_CANCELED"
 		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
 	}
 
