@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"log"
 	"log/slog"
@@ -34,9 +33,6 @@ func GetClientOptions(isNexus bool) client.Options {
 		address = GetEnv("TEMPORAL_ADDRESS", "localhost:7233")
 		namespace = GetEnv("TEMPORAL_NAMESPACE", "default")
 	}
-
-	fmt.Println("address", address)
-	fmt.Println("namespace", namespace)
 
 	clientOptions := client.Options{
 		HostPort:  address,

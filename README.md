@@ -35,6 +35,7 @@ This demo shows how to implement a naive customer lifecycle workflow using Tempo
   - Clear our Saga compensations
 - ChargeCustomer on a loop every 10 seconds
   - NOTE: this runs in a child workflow if the scenario is set to `SCENARIO_CHILD_WORKFLOW`
+  - NOTE: this runs in a workflow in a different namespace if the scenario is set to `SCENARIO_NEXUS`
   - CancelSubscriptionSignal to cancel
 
 ## Lifecycle Signals
@@ -59,7 +60,6 @@ This demo shows how to implement a naive customer lifecycle workflow using Tempo
 - Child Workflow
 - Nexus
 
-
 ## Setup
 
 ### Running and Configuring the Temporal Dev Server (Option #1)
@@ -76,7 +76,7 @@ created. If you are using the Temporal dev server, use the `operator search-attr
 command.
 
 ```bash
-temporal operator search-attribute create --namespace default --name LifecycleStatus --type text
+temporal operator search-attribute create --namespace default --name LifecycleStatus --type keyword
 ```
 
 _NOTE: If you want to use the Nexus scenario, you will need to create the search attribute in the
@@ -98,7 +98,7 @@ If you are using Temporal Cloud, the command will look a bit different, using `t
 If you are not already logged into Temporal Cloud with `tcld` run `tcld login`.
 
 ```bash
-tcld namespace search-attributes add -n $TEMPORAL_NAMESPACE --sa "LifecycleStatus=Text"
+tcld namespace search-attributes add -n $TEMPORAL_NAMESPACE --sa "LifecycleStatus=Keyword"
 ```
 
 ### Using Encryption

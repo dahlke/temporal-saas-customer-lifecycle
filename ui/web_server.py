@@ -39,7 +39,7 @@ SCENARIOS = {
 	},
 	"NEXUS": {
 		"title": "Nexus Workflow",
-		"description": "This will run the Happy Path then spawn a workflow in another workspace to manage the subscription lifecycle."
+		"description": "This will run the Happy Path then spawn a workflow in another namespace to manage the subscription lifecycle."
 	},
 }
 
@@ -69,7 +69,7 @@ async def main():
 async def run_workflow():
 	# Get the selected scenario and workflow ID from the request arguments
 	selected_scenario = request.args.get("scenario", "")
-	account_name = request.args.get("accountName", "")
+	account_name = request.args.get("accountName", "default")
 	wf_id = request.args.get("wfID", "")
 
 	# Create Workflow input

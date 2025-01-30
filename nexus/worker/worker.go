@@ -20,7 +20,6 @@ func main() {
 	defer c.Close()
 
 	w := worker.New(c, app.GetEnv("NEXUS_BILLING_TASK_QUEUE", "subscription-billing-task-queue"), worker.Options{})
-	// TODO: take this from the constants in shared.go?
 	service := nexus.NewService(app.BillingServiceName)
 	err = service.Register(handler.BillingOperation)
 	if err != nil {

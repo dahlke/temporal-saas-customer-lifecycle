@@ -16,6 +16,19 @@ const (
 	SCENARIO_NEXUS_WORKFLOW          = "NEXUS"
 )
 
+const BillingServiceName = "billing-service"
+const BillingOperationName = "charge-customer"
+
+type BillingInput struct {
+	AccountName string
+	Price       float64
+	Scenario    string
+}
+
+type BillingOutput struct {
+	Message string
+}
+
 func GenerateNewClaimCode() string {
 	const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	rand.Seed(time.Now().UnixNano())

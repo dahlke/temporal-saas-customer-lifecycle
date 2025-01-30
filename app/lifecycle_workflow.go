@@ -129,7 +129,7 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 	if input.Scenario == SCENARIO_RECOVERABLE_FAILURE {
 		// Simulate bug
 		// NOTE: comment out this line to see the happy path
-		// panic("Simulated bug - fix me!")
+		panic("Simulated bug - fix me!")
 	}
 
 	// Update search attribute to indicate claim code sending phase
@@ -160,7 +160,8 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 	// Get signal channel for resend claim codes
 	claimCodesSignalChan := messages.GetSignalChannelForResendClaimCodes(ctx)
 
-	// Goroutine to handle resend claim codes signal
+	// Goroutine to handle resend claim codes signal since this blocks the main
+	// workflow and we also want to wait for 2 minutes for the claim codes to be claimed
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		for {
 			selector := workflow.NewSelector(ctx)
@@ -282,6 +283,9 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 
 			nf.GetNexusOperationExecution().Get(ctx, &op)
 			logger.Info("Started Nexus Operation: " + op.OperationID)
+
+			state.Progress = 100
+			nf.Get(ctx, &op)
 		} else {
 			// Create a channel to receive the cancel subscription signal
 			cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)

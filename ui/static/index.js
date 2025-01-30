@@ -103,7 +103,8 @@ function runWorkflow() {
 	// Redirect to run_workflow page with the selected scenario as a query parameter
 	window.location.href =
 		"/run_workflow?scenario=" + encodeURIComponent(scenario) +
-		"&wfID=" + encodeURIComponent(wfID)
+		"&wfID=" + encodeURIComponent(wfID) +
+		"&accountName=" + encodeURIComponent(accountName)
 }
 
 function signal(signalType, payload) {

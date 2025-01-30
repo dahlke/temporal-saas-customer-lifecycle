@@ -10,10 +10,17 @@ import (
 	"go.temporal.io/sdk/temporal"
 )
 
+const SLEEP_TIME = 1 * time.Second
+
+func SimulateAPICall() (string, error) {
+	time.Sleep(SLEEP_TIME)
+	return "success", nil
+}
+
 func ChargeCustomer(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("charging customer", "customer_id", input.AccountName, "amount", input.Price)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 
 	if input.Scenario == SCENARIO_NON_RECOVERABLE_FAILURE {
 		return "", temporal.NewNonRetryableApplicationError(
@@ -28,28 +35,28 @@ func ChargeCustomer(ctx context.Context, input types.LifecycleInput) (string, er
 func RefundCustomer(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("refunding customer", "customer_id", input.AccountName, "amount", input.Price)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 	return "success", nil
 }
 
 func CreateAccount(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("creating account", "email", input.AccountName)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 	return "success", nil
 }
 
 func DeleteAccount(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("deleting account", "email", input.AccountName)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 	return "success", nil
 }
 
 func CreateAdminUsers(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("creating admin users", "emails", input.Emails)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 
 	if input.Scenario == SCENARIO_FLAKEY_API {
 		info := activity.GetInfo(ctx)
@@ -64,27 +71,27 @@ func CreateAdminUsers(ctx context.Context, input types.LifecycleInput) (string, 
 func DeleteAdminUsers(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("deleting admin users", "emails", input.Emails)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 	return "success", nil
 }
 
 func SendClaimCodes(ctx context.Context, input types.LifecycleInput, claimCode string) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("sending claim code", "email", input.AccountName, "code", claimCode)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 	return "success", nil
 }
 
 func SendWelcomeEmail(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("sending welcome email", "emails", input.Emails)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 	return "success", nil
 }
 
 func SendFeedbackEmail(ctx context.Context, input types.LifecycleInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("sending feedback email", "emails", input.Emails)
-	time.Sleep(1 * time.Second)
+	SimulateAPICall()
 	return "success", nil
 }
