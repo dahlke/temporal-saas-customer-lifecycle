@@ -14,6 +14,7 @@ This demo shows how to implement a naive customer lifecycle workflow using Tempo
 |                    |    | __ | Data Converter | ✅ | __ |                     |    |
 |                    |    | __ | Child Workflow | ✅ | __ |                     |    |
 |                    |    | __ | Polyglot       | ✅ | __ |                     |    |
+|                    |    | __ | Nexus          | ✅ | __ |                     |    |
 |                    |    | __ | Replay Tests   |    | __ |                     |    |
 |                    |    | __ | API Keys       |    | __ |                     |    |
 
