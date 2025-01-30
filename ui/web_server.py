@@ -145,7 +145,6 @@ async def get_progress():
 @app.route('/end_workflow')
 async def end_workflow():
 	wf_id = request.args.get("wfID", "")
-	scenario = request.args.get("scenario", "")
 
 	client = await _get_singleton_temporal_client()
 	wf_handle = client.get_workflow_handle(wf_id)
@@ -166,6 +165,9 @@ async def end_workflow():
 async def signal():
 	wf_id = request.args.get("wfID", "")
 	signal_type = request.json.get("signalType", "")
+	scenario = request.args.get("scenario", "")
+
+	print("SIGNAL", wf_id, signal_type)
 
 	try:
 		client = await _get_singleton_temporal_client()
@@ -175,6 +177,9 @@ async def signal():
 			await wf_handle.signal(signal_type)
 		elif signal_type == "CancelSubscriptionSignal":
 			await wf_handle.signal(signal_type)
+
+			if scenario == "NEXUS":
+				await wf_handle.cancel()
 		else:
 			raise Exception("Signal type not supported")
 

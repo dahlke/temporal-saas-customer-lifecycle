@@ -18,6 +18,8 @@ type LifecycleWorkflowState struct {
 	Progress        int               `json:"progress"`
 	Status          string            `json:"status"`
 	ChildWorkflowID string            `json:"child_workflow_id"`
+	NexusWorkflowID string            `json:"nexus_workflow_id"`
+	NexusNamespace  string            `json:"nexus_namespace"`
 }
 
 type LifecycleInput struct {

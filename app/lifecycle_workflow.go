@@ -255,7 +255,6 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 		state.Progress = 90
 		state.Status = "ONBOARDED"
 		workflow.UpsertTypedSearchAttributes(ctx, lifecycleStatusKey.ValueSet(state.Status))
-
 		if input.Scenario == SCENARIO_CHILD_WORKFLOW {
 			// Start the subscription child workflow
 			state.ChildWorkflowID = fmt.Sprintf("subscription-billing-%v-%v", input.AccountName, uuid.New().String())
@@ -282,10 +281,13 @@ func LifecycleWorkflow(ctx workflow.Context, input types.LifecycleInput) (string
 			nf := service.ExecuteOperation(ctx, BillingOperationName, input, workflow.NexusOperationOptions{})
 
 			nf.GetNexusOperationExecution().Get(ctx, &op)
+
+			state.NexusWorkflowID = op.OperationID
 			logger.Info("Started Nexus Operation: " + op.OperationID)
 
 			state.Progress = 100
 			nf.Get(ctx, &op)
+			state.Status = "SUBSCRIPTION_CANCELED"
 		} else {
 			// Create a channel to receive the cancel subscription signal
 			cancelSubscriptionSignalChan := messages.GetSignalChannelForCancelSubscription(ctx)

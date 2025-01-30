@@ -29,6 +29,7 @@ function updateCodesContainer(data) {
 }
 
 var GLOBAL_childWorkflowID = "";
+var GLOBAL_nexusWorkflowID = "";
 
 function updateProgress() {
 	var urlParams = new URLSearchParams(window.location.search);
@@ -47,11 +48,12 @@ function updateProgress() {
 			document.getElementById("errorMessage").innerText = "";
 			document.getElementById("progressBar").style.width = data.progress + "%";
 
-			if (scenario === "CHILD_WORKFLOW" && data.child_workflow_id !== "") {
+			if (data.child_workflow_id !== "" || data.nexus_workflow_id !== "") {
 				GLOBAL_childWorkflowID = data.child_workflow_id;
+				GLOBAL_nexusWorkflowID = data.nexus_workflow_id;
 
 				// Check if the row already exists
-				if (!document.getElementById("childWorkflowRow")) {
+				if (GLOBAL_childWorkflowID !== "" && !document.getElementById("childWorkflowRow")) {
 					const table = document.getElementById("workflowInfoTable");
 					const newRow = table.insertRow();
 					newRow.id = "childWorkflowRow"; // Set the ID for the new row
@@ -62,6 +64,17 @@ function updateProgress() {
 
 					const cell2 = newRow.insertCell(1);
 					cell2.innerHTML = `<a href="${data.temporal_ui_url}/namespaces/${data.temporal_namespace}/workflows/${GLOBAL_childWorkflowID}" target="_blank">${GLOBAL_childWorkflowID}</a>`;
+				} else if (GLOBAL_nexusWorkflowID !== "" && !document.getElementById("nexusWorkflowRow")) {
+					const table = document.getElementById("workflowInfoTable");
+					const newRow = table.insertRow();
+					newRow.id = "nexusWorkflowRow"; // Set the ID for the new row
+
+					const cell1 = document.createElement('th');
+					cell1.innerHTML = "Nexus Workflow ID";
+					newRow.appendChild(cell1);
+
+					const cell2 = newRow.insertCell(1);
+					cell2.innerHTML = `<a href="${data.temporal_ui_url}/namespaces/${data.nexus_namespace}/workflows/${GLOBAL_nexusWorkflowID}" target="_blank">${GLOBAL_nexusWorkflowID}</a>`;
 				}
 			}
 
@@ -78,7 +91,11 @@ function updateProgress() {
 				document.getElementById("codesContainer").style.display = "block";
 
 				updateCodesContainer(data.claim_codes);
-			} else if (data.status.includes("RENEWED") || (scenario == "CHILD_WORKFLOW" && data.status === "ONBOARDED")) {
+			} else if (
+				data.status.includes("RENEWED") ||
+				(scenario == "CHILD_WORKFLOW" && data.status === "ONBOARDED") ||
+				(scenario == "NEXUS" && data.status === "ONBOARDED")
+			) {
 				document.getElementById("cancelSignalContainer").style.display = "block";
 			} else if (data.status.includes("CODE_NOT_CLAIMED")) {
 				window.location.href =
@@ -114,10 +131,14 @@ function signal(signalType, payload) {
 	if (GLOBAL_childWorkflowID !== "") {
 		wfID = GLOBAL_childWorkflowID;
 	}
+	// TODO: can I cancel the caller workflow and have the handler be cancelled?
+	/* else if (GLOBAL_nexusWorkflowID !== "") {
+		wfID = GLOBAL_nexusWorkflowID;
+	} */
 	var scenario = urlParams.get("scenario");
 
 	// Perform AJAX request to the server for signaling
-	fetch("/signal?wfID=" + encodeURIComponent(wfID), {
+	fetch("/signal?wfID=" + encodeURIComponent(wfID) + "&scenario=" + encodeURIComponent(scenario), {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json"
@@ -134,6 +155,12 @@ function signal(signalType, payload) {
 				window.location.href =
 					"/end_workflow?wfID=" + encodeURIComponent(wfID) +
 					"&scenario=" + encodeURIComponent(scenario);
+
+				if (scenario === "NEXUS_WORKFLOW") {
+					window.location.href =
+						"/end_workflow?wfID=" + encodeURIComponent(wfID) +
+						"&scenario=" + encodeURIComponent(scenario);
+				}
 			}
 		} else {
 				console.error("Failed to send signal");
